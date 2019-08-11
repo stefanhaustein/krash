@@ -6,6 +6,19 @@ group='com.github.stefanhaustein.emojisprites'
 android {
     compileSdkVersion 28
     buildToolsVersion '28.0.3'
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
 }
 
 task sourcesJar(type: Jar) {
@@ -15,4 +28,8 @@ task sourcesJar(type: Jar) {
 
 artifacts {
     archives sourcesJar
+}
+
+dependencies {
+    api project(path: ':core')
 }

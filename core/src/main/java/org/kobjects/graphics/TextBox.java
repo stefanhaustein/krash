@@ -31,7 +31,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
     view.wrapped.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
       @Override
       public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-        requestSync();
+        requestSync(true);
       }
     });
   }
@@ -82,13 +82,19 @@ public class TextBox extends PositionedViewHolder<TextView> {
     }
   }
 
+  void requestSync(boolean hard) {
+    super.requestSync(hard);
+    if (hard) {
+      layoutDirty = true;
+    }
+  }
+
   public boolean setSize(float size) {
     if (size == this.size) {
       return false;
     }
     this.size = size;
-    layoutDirty = true;
-    requestSync();
+    requestSync(true);
     return true;
   }
 
@@ -97,8 +103,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
       return false;
     }
     this.text = text;
-    layoutDirty = true;
-    requestSync();
+    requestSync(true);
     return true;
   }
 
@@ -107,7 +112,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
       return false;
     }
     this.fillColor = fillColor;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -116,7 +121,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
       return false;
     }
     this.lineColor = lineColor;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -125,7 +130,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
       return false;
     }
     this.textColor = textColor;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -134,7 +139,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
       return false;
     }
     this.lineWidth = lineWidth;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -144,7 +149,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
       return false;
     }
     this.cornerRadius = cornerRadius;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -155,7 +160,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
       return false;
     }
     this.padding = padding;
-    requestSync();
+    requestSync(true);
     return true;
   }
 

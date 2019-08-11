@@ -34,7 +34,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       @Override
       public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
         if (PositionedViewHolder.this.view.getParent() != null) {
-          requestSync();
+          requestSync(true);
         }
       }
     });
@@ -44,7 +44,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
   abstract void syncUi();
 
 
-  void requestSync() {
+  void requestSync(boolean hard) {
     if (!syncRequested) {
       syncRequested = true;
       screen.activity.runOnUiThread(() -> {
@@ -70,8 +70,6 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
         view.setTranslationY(getRelativeY() * screen.scale);
 
         view.setTranslationZ(z);
-
-
       });
     }
   }
@@ -175,7 +173,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     this.x = x;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -184,7 +182,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     this.y = y;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -195,7 +193,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     this.opacity = opacity;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -204,7 +202,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     this.anchor = anchor;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -213,7 +211,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     this.z = z;
-    requestSync();
+    requestSync(false);
 
     return true;
   }
@@ -229,7 +227,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     visible = value;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -246,7 +244,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     xAlign = newValue;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -256,7 +254,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       return false;
     }
     yAlign = newValue;
-    requestSync();
+    requestSync(false);
     return true;
   }
 

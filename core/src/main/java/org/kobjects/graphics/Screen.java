@@ -53,6 +53,11 @@ public class Screen extends ViewHolder<FrameLayout> {
       public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
         scale = Math.min(right - left, bottom - top) / 200f;
         dpad.requestSync();
+        synchronized (widgets) {
+          for (PositionedViewHolder<?> widget : widgets) {
+            widget.requestSync(true);
+          }
+        }
       }
     });
 

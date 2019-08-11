@@ -62,6 +62,14 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
 
 
   @Override
+  void requestSync(boolean hard) {
+    super.requestSync(hard);
+    if (hard) {
+      sizeDirty = true;
+    }
+  }
+
+  @Override
   public void syncUi() {
     if (textDirty) {
       textDirty = false;
@@ -85,7 +93,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     }
     this.size = size;
     sizeDirty = true;
-    requestSync();
+    requestSync(true);
     return true;
   }
 
@@ -149,7 +157,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     }
     this.face = face;
     textDirty = true;
-    requestSync();
+    requestSync(true);
     return true;
   }
 
@@ -158,7 +166,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
       return false;
     }
     this.angle = angle;
-    requestSync();
+    requestSync(false);
     return true;
   }
 
@@ -234,7 +242,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     }
 
     if (propertiesChanged) {
-      requestSync();
+      requestSync(false);
     }
 
     if (tag instanceof Animated) {
