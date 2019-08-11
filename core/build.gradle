@@ -1,4 +1,7 @@
+apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.android.library'
+
+group='com.github.stefanhaustein.emojisprites'
 
 android {
     compileSdkVersion 28
