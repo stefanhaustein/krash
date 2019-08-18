@@ -1,5 +1,7 @@
 package org.kobjects.graphics;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -22,6 +24,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   private float grow;
   private float fade;
   private float rotation;
+  private Bitmap bitmap;
 
   private EdgeMode edgeMode = EdgeMode.NONE;
 
@@ -73,7 +76,13 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   public void syncUi() {
     if (textDirty) {
       textDirty = false;
-      view.wrapped.setImageDrawable(Emojis.getDrawable(view.getContext(), face));
+      if (bitmap != null) {
+        BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
+        bitmapDrawable.setFilterBitmap(false);
+        view.wrapped.setImageBitmap(bitmap);
+      } else {
+        view.wrapped.setImageDrawable(Emojis.getDrawable(view.getContext(), face));
+      }
     }
 
     if (sizeDirty) {
@@ -132,6 +141,13 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
       bubble.setCornerRadius(3);
     }
     return bubble;
+  }
+
+  public void setBitmap(Bitmap bitmap) {
+    this.bitmap = bitmap;
+    this.face = "";
+    this.textDirty = true;
+    requestSync(false);
   }
 
   public boolean setBubble(TextBox bubble) {
