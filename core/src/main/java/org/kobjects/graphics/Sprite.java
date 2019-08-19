@@ -79,7 +79,8 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
       if (bitmap != null) {
         BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
         bitmapDrawable.setFilterBitmap(false);
-        view.wrapped.setImageBitmap(bitmap);
+       // bitmapDrawable.setAntiAlias(false);
+        view.wrapped.setImageDrawable(bitmapDrawable);
       } else {
         view.wrapped.setImageDrawable(Emojis.getDrawable(view.getContext(), face));
       }
