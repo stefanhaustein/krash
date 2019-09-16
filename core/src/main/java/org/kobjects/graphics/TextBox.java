@@ -28,12 +28,6 @@ public class TextBox extends PositionedViewHolder<TextView> {
   public TextBox(Screen screen) {
     super(screen, new TextView(screen.activity));
     this.textPaint = view.wrapped.getPaint();
-    view.wrapped.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-      @Override
-      public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-        requestSync(true);
-      }
-    });
   }
 
   @Override

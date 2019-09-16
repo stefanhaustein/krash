@@ -268,7 +268,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   }
 
   /**
-   * Checks all sprites, as widgets is flattened.
+   * Checks all sprites, as allWidgets is flattened.
    */
   public Collection<Sprite> collisions() {
     if (!shouldBeAttached()) {
@@ -276,10 +276,10 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     }
     float sx = getScreenCX();
     float sy = getScreenCY();
-    synchronized (screen.widgets) {
+    synchronized (screen.allWidgets) {
       ArrayList<Sprite> result = new ArrayList<>();
       // StringBuilder debug = new StringBuilder();
-      for (PositionedViewHolder<?> widget : screen.widgets) {
+      for (PositionedViewHolder<?> widget : screen.allWidgets) {
         if (widget != this && widget instanceof Sprite && widget.shouldBeAttached()) {
           Sprite other = (Sprite) widget;
           double distX = other.getScreenCX() - sx;

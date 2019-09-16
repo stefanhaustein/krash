@@ -29,7 +29,7 @@ public class Screen extends ViewHolder<FrameLayout> {
   /**
    * Contains all positioned view holders including children.
    */
-  Set<PositionedViewHolder<?>> widgets = Collections.newSetFromMap(new WeakHashMap<>());
+  Set<PositionedViewHolder<?>> allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
 
 
   public Screen(@NonNull Activity activity) {
@@ -51,11 +51,13 @@ public class Screen extends ViewHolder<FrameLayout> {
     view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
       @Override
       public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-        scale = Math.min(right - left, bottom - top) / 200f;
-        dpad.requestSync();
-        synchronized (widgets) {
-          for (PositionedViewHolder<?> widget : widgets) {
-            widget.requestSync(true);
+        if (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom) {
+          scale = Math.min(right - left, bottom - top) / 200f;
+          dpad.requestSync();
+          synchronized (allWidgets) {
+            for (PositionedViewHolder<?> widget : allWidgets) {
+              widget.requestSync(true);
+            }
           }
         }
       }
@@ -82,12 +84,12 @@ public class Screen extends ViewHolder<FrameLayout> {
 
   public void clearAll() {
     cls();
-    synchronized (widgets) {
-      for (PositionedViewHolder<?> widget : widgets) {
+    synchronized (allWidgets) {
+      for (PositionedViewHolder<?> widget : allWidgets) {
         widget.setVisible(false);
       }
     }
-    widgets = Collections.newSetFromMap(new WeakHashMap<>());
+    allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
   }
 
   public void cls() {
@@ -106,9 +108,9 @@ public class Screen extends ViewHolder<FrameLayout> {
   }
 
   public void animate(float dt) {
-    ArrayList<PositionedViewHolder<?>> copy = new ArrayList<>(widgets.size());
-    synchronized (widgets) {
-      copy.addAll(widgets);
+    ArrayList<PositionedViewHolder<?>> copy = new ArrayList<>(allWidgets.size());
+    synchronized (allWidgets) {
+      copy.addAll(allWidgets);
     }
     for (PositionedViewHolder<?> widget : copy) {
       if (widget instanceof Sprite) {

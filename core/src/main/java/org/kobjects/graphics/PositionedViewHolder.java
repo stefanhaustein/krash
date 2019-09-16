@@ -24,20 +24,12 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
 
   PositionedViewHolder(Screen screen, T view) {
     super(new AnchorLayout<>(view));
-    synchronized (screen.widgets) {
-      screen.widgets.add(this);
+    synchronized (screen.allWidgets) {
+      screen.allWidgets.add(this);
     }
     this.screen = screen;
     this.anchor = screen;
     view.setTag(this);
-    screen.view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-      @Override
-      public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-        if (PositionedViewHolder.this.view.getParent() != null) {
-          requestSync(true);
-        }
-      }
-    });
   }
 
 
