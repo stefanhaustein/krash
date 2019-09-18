@@ -136,8 +136,7 @@ public class TextBox extends PositionedViewHolder<TextView> {
     requestSync(false);
     return true;
   }
-
-
+  
   public boolean setCornerRadius(float cornerRadius) {
     if (cornerRadius == this.cornerRadius) {
       return false;
@@ -146,8 +145,6 @@ public class TextBox extends PositionedViewHolder<TextView> {
     requestSync(false);
     return true;
   }
-
-
 
   public boolean setPadding(float padding) {
     if (padding == this.padding) {

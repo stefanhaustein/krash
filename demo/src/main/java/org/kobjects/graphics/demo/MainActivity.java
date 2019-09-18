@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
 
     Sprite ghost = new Sprite(screen);
     ghost.setFace("\uD83D\uDC7B");
-//    ghost.setOpacity(0.8f);  // hides text somehow... :-/
+    ghost.setOpacity(0.8f);
     ghost.setSpeed(10);
     ghost.setDirection(80);
     ghost.setZ(1);

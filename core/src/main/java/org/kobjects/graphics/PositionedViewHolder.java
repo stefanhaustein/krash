@@ -42,7 +42,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
       screen.activity.runOnUiThread(() -> {
         syncRequested = false;
         view.setVisibility(visible ? View.VISIBLE : View.GONE);
-        view.setAlpha(opacity);
+        view.wrapped.setAlpha(opacity);
         // visible is used internally to handle bubble visibility and to remove everything on clear, so it
         // gets special treatment here.
         boolean shouldBeAttached = visible && shouldBeAttached();
@@ -78,6 +78,10 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
 
   public Screen getScreen() {
     return screen;
+  }
+
+  public T getWrapped() {
+    return view.wrapped;
   }
 
   public float getRelativeX() {
