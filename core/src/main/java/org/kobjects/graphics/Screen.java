@@ -2,12 +2,13 @@ package org.kobjects.graphics;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.support.annotation.NonNull;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+
+import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;

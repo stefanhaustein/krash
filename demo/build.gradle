@@ -4,14 +4,14 @@ apply plugin: 'com.github.dcendents.android-maven'
 group='com.github.stefanhaustein.emojisprites'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     buildToolsVersion '28.0.3'
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 29
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
 
@@ -32,6 +32,5 @@ artifacts {
 
 dependencies {
     implementation project(path: ':core')
-    implementation 'com.vanniktech:emoji-twitter:0.6.0-SNAPSHOT'
-
+    implementation 'com.vanniktech:emoji-twitter:0.7.0-SNAPSHOT'
 }

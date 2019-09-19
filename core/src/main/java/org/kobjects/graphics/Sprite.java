@@ -5,6 +5,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import androidx.appcompat.widget.AppCompatImageView;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,7 +34,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   private boolean sizeDirty = true;
 
   public Sprite(Screen screen) {
-    super(screen, new android.support.v7.widget.AppCompatImageView(screen.activity));
+    super(screen, new AppCompatImageView(screen.activity));
 
    // view.wrapped.setAdjustViewBounds(true);
    view.wrapped.setScaleType(ImageView.ScaleType.FIT_XY);
