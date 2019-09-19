@@ -28,7 +28,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
 
   private EdgeMode edgeMode = EdgeMode.NONE;
 
-  private boolean textDirty = true;
+  private boolean imageDirty = true;
   private boolean sizeDirty = true;
 
   public Sprite(Screen screen) {
@@ -74,8 +74,8 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
 
   @Override
   public void syncUi() {
-    if (textDirty) {
-      textDirty = false;
+    if (imageDirty) {
+      imageDirty = false;
       if (bitmap != null) {
         BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
         bitmapDrawable.setFilterBitmap(false);
@@ -147,7 +147,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   public void setBitmap(Bitmap bitmap) {
     this.bitmap = bitmap;
     this.face = "";
-    this.textDirty = true;
+    this.imageDirty = true;
     requestSync(false);
   }
 
@@ -173,7 +173,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
       return false;
     }
     this.face = face;
-    textDirty = true;
+    imageDirty = true;
     requestSync(true);
     return true;
   }
