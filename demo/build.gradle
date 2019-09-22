@@ -32,5 +32,5 @@ artifacts {
 
 dependencies {
     implementation project(path: ':core')
-    implementation 'com.vanniktech:emoji-twitter:0.7.0-SNAPSHOT'
+    implementation 'com.vanniktech:emoji-twitter:0.6.0'
 }

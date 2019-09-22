@@ -44,5 +44,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    api 'com.vanniktech:emoji:0.7.0-SNAPSHOT'
+    api 'com.vanniktech:emoji:0.6.0'
 }
