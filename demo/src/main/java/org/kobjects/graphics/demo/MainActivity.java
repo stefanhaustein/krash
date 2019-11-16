@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
     ghost.setFace("\uD83D\uDC7B");
     ghost.setOpacity(0.8f);
     ghost.setSpeed(10);
-    ghost.setDirection(80);
+    ghost.setDirection(-50);
     ghost.setZ(1);
     ghost.setSize(30);
     ghost.setEdgeMode(EdgeMode.WRAP);

@@ -224,7 +224,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
             if (dx > 0 && x - radius > screen.getWidth() / 2) {
               x = -screen.getWidth() / 2 - radius;
             } else if (dx < 0 && x + radius < screen.getWidth() / -2) {
-              x = screen.getWidth() / 2 - radius;
+              x = screen.getWidth() / 2 + radius;
             }
             if (dy > 0 && y - radius > screen.getHeight() / 2) {
               y = -screen.getHeight() / 2 - radius;
