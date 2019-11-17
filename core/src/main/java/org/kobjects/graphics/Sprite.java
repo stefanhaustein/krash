@@ -1,20 +1,54 @@
 package org.kobjects.graphics;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Picture;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.PictureDrawable;
+import android.graphics.drawable.ScaleDrawable;
+import android.view.Gravity;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.appcompat.widget.AppCompatImageView;
 
+import com.caverock.androidsvg.SVG;
+
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class Sprite extends PositionedViewHolder<ImageView>  {
 
   public static final String DEFAULT_FACE = "\ud83d\ude03";
+
+  // TODO: add a static SVG that can be used to mark loading errors.
+  static Map<String, SVG> svgCache = new HashMap<>();
+
+  private static Canvas testCanvas;
+  private static Bitmap testBitmap;
+
+  static float clockwiseDegToDx(float deg) {
+    return (float) Math.cos(Math.toRadians(90 - deg));
+  }
+
+  static float clockwiseDegToDy(float deg) {
+    return (float) Math.sin(Math.toRadians(90 - deg));
+  }
+
+  static float dxDyToClockwiseDeg(float dx, float dy) {
+    return  90 - (float) Math.toDegrees(Math.atan2(dy, dx));
+  }
 
   TextBox label;
   TextBox bubble;
@@ -33,10 +67,13 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   private boolean imageDirty = true;
   private boolean sizeDirty = true;
 
+  private float[] distances = new float[64];
+
+
   public Sprite(Screen screen) {
     super(screen, new AppCompatImageView(screen.activity));
 
-   // view.wrapped.setAdjustViewBounds(true);
+   view.wrapped.setAdjustViewBounds(true);
    view.wrapped.setScaleType(ImageView.ScaleType.FIT_XY);
 
     setFace(DEFAULT_FACE);
@@ -74,26 +111,95 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     }
   }
 
+  void fillDistanceArray(Drawable drawable) {
+    if (testCanvas == null) {
+      testBitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
+      testCanvas = new Canvas(testBitmap);
+    }
+
+    Paint clearPaint = new Paint();
+    clearPaint.setColor(0);
+    clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+
+    testCanvas.drawRect(0, 0, 64, 64, clearPaint);
+
+    ScaleDrawable scaleDrawable = new ScaleDrawable(drawable, Gravity.CENTER, 64, 64);
+    scaleDrawable.setLevel(10000);
+    scaleDrawable.setBounds(0, 0, 64, 64);
+    scaleDrawable.draw(testCanvas);
+
+    for (int i = 0; i < 64; i++) {
+      distances[i] = 0;
+      float deg = i * 360 / 64;
+      float dx = clockwiseDegToDx(deg);
+      float dy = clockwiseDegToDy(deg);
+      for (int distance = (int) Math.sqrt(2 * 32 * 32); distance > 0; distance -= 2) {
+        int x = 32 + (int) (dx * distance);
+        int y = 32 + (int) (dy * distance);
+        if (x >= 0 && y >= 0 && x < 64 && y < 64) {
+          if (testBitmap.getPixel(x, y) != 0) {
+            distances[i] = distance/32f;
+            break;
+          } else {
+            testBitmap.setPixel(x, y, i < 8 ? 0xff00ff00 : i < 16 ? 0xff0000ff : 0xffff0000);
+          }
+        }
+      }
+    }
+
+  }
+
+
   @Override
   public void syncUi() {
     if (imageDirty) {
       imageDirty = false;
+      Drawable drawable;
       if (bitmap != null) {
         BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
         bitmapDrawable.setFilterBitmap(false);
        // bitmapDrawable.setAntiAlias(false);
-        view.wrapped.setImageDrawable(bitmapDrawable);
+        drawable = bitmapDrawable;
+        view.wrapped.setLayerType(View.LAYER_TYPE_HARDWARE, null);
       } else {
-        view.wrapped.setImageDrawable(Emojis.getDrawable(view.getContext(), face));
+        synchronized (svgCache) {
+          SVG svg = svgCache.get(face);
+          if (svg != null) {
+            view.wrapped.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            drawable = new SvgDrawable(svg);
+          } else {
+            view.wrapped.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            drawable = Emojis.getDrawable(view.getContext(), face);
+          }
+        }
       }
+
+      fillDistanceArray(drawable);
+      view.wrapped.setImageDrawable(drawable);
+
     }
 
     if (sizeDirty) {
       sizeDirty = false;
-      // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
-      view.wrapped.setLayoutParams(new FrameLayout.LayoutParams(Math.round(screen.scale * size), Math.round(screen.scale * size)));
+
+      int pixelSize = Math.round(screen.scale * size);
+
+   /*   if (face != null && !face.isEmpty()) {
+        synchronized (svgCache) {
+          SVG svg = svgCache.get(face);
+          if (svg != null) {
+            view.wrapped.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+            view.wrapped.setImageDrawable(new PictureDrawable(svg.renderToPicture(pixelSize, pixelSize)));
+          }
+        }
+      }*/
+
+          // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
+      view.wrapped.setLayoutParams(new FrameLayout.LayoutParams(pixelSize, pixelSize));
       view.wrapped.requestLayout();
       view.requestLayout();
+
+
     }
     view.wrapped.setRotation(angle);
   }
@@ -173,6 +279,12 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   public boolean setFace(String face) {
     if (Objects.equals(face, this.face)) {
       return false;
+    }
+
+    synchronized (svgCache) {
+      if (svgCache.get(face) == null) {
+        requestSvg(face);
+      }
     }
     this.face = face;
     imageDirty = true;
@@ -267,7 +379,39 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     if (tag instanceof Animated) {
       ((Animated) tag).animate(dt, propertiesChanged);
     }
+/*
+    if (collisions().size() > 0) {
+      view.wrapped.setBackgroundColor(0xffff0000);
+    } else {
+      view.wrapped.setBackgroundColor(0);
+    } */
   }
+
+  boolean checkCollision(Sprite other) {
+    float sx = getScreenCX();
+    float sy = getScreenCY();
+    float distX = other.getScreenCX() - sx;
+    float distY = other.getScreenCY() - sy;
+    double minDist = (other.size + size) * 0.5;
+    float centerDistanceSq = distX * distX + distY * distY;
+    if (centerDistanceSq > minDist * minDist) {
+      return false;
+    }
+
+    float direction = dxDyToClockwiseDeg(distX, distY) + angle;
+    int directionIndex = ((int) (direction * 64 / 360)) & 63;
+    float radius = size * distances[directionIndex] / 2;
+
+    float otherDirection = dxDyToClockwiseDeg(-distX, -distY) + other.angle;
+    int otherDirectionIndex = ((int) (otherDirection * 64 / 360)) & 63;
+    float otherRadius = other.size * other.distances[otherDirectionIndex] / 2;
+
+    minDist = radius + otherRadius;
+
+    return centerDistanceSq < minDist * minDist;
+  }
+
+
 
   /**
    * Checks all sprites, as allWidgets is flattened.
@@ -276,20 +420,14 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     if (!shouldBeAttached()) {
       return Collections.emptyList();
     }
-    float sx = getScreenCX();
-    float sy = getScreenCY();
     synchronized (screen.allWidgets) {
       ArrayList<Sprite> result = new ArrayList<>();
       // StringBuilder debug = new StringBuilder();
       for (PositionedViewHolder<?> widget : screen.allWidgets) {
         if (widget != this && widget instanceof Sprite && widget.shouldBeAttached()) {
           Sprite other = (Sprite) widget;
-          double distX = other.getScreenCX() - sx;
-          double distY = other.getScreenCY() - sy;
-          double minDist = (other.size + size) * 0.4;
-          if (distX * distX + distY * distY < minDist * minDist) {
+          if (checkCollision((Sprite) widget)) {
             result.add(other);
-            // debug.append(other.face);
           }
         }
       }
@@ -363,11 +501,11 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   }
 
   public float getDx() {
-    return speed * (float) Math.cos(Math.toRadians(90 - direction));
+    return speed * clockwiseDegToDx(direction);
   }
 
   public float getDy() {
-    return speed *  (float) Math.sin(Math.toRadians(90 - direction));
+    return speed * clockwiseDegToDy(direction);
   }
 
   boolean setDxy(float dx, float dy) {
@@ -377,8 +515,8 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
       return setSpeed(0);
     }
 
-    float newDirection = 90 - (float) Math.toDegrees(Math.atan2(dy, dx));
-    return setSpeed(newSpeed) | setDirection(newDirection < 0 ? 360 + newDirection : newDirection);
+
+    return setSpeed(newSpeed) | setDirection(dxDyToClockwiseDeg(dx, dy));
   }
 
   public boolean setDx(float dx) {
@@ -388,4 +526,31 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   public boolean setDy(float dy) {
     return setDxy(getDx(), dy);
   }
+
+
+  void requestSvg(String name) {
+    int codePoint = Character.codePointAt(name, 0);
+
+    new Thread(() -> {
+      try {
+        URL url = new URL("https://twemoji.maxcdn.com/svg/" + Integer.toHexString(codePoint) + ".svg");
+        System.out.println("************ Requesting SVG url: " + url);
+        InputStream is = url.openConnection().getInputStream();
+        SVG svg = SVG.getFromInputStream(is);
+        is.close();
+
+        synchronized (svgCache) {
+          svgCache.put(name, svg);
+        }
+        imageDirty = true;
+        requestSync(true);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+
+    }).start();
+
+
+  }
+
 }
