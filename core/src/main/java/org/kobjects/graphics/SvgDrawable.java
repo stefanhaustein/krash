@@ -20,29 +20,39 @@ public class SvgDrawable extends Drawable{
 
   private final SVG svg;
   private PictureDrawable wrapped;
+  private int alpha;
+  private ColorFilter colorFilter;
 
   public SvgDrawable(SVG svg) {
     this.svg = svg;
   }
 
-  @Override
-  public void draw(@NonNull Canvas canvas) {
+  private PictureDrawable getWrapped() {
     if (wrapped == null) {
       onBoundsChange(getBounds());
     }
-    wrapped.draw(canvas);
+    return wrapped;
+  }
+
+  @Override
+  public void draw(@NonNull Canvas canvas) {
+    getWrapped().draw(canvas);
   }
 
   @Override
   public void setAlpha(int i) {
-    wrapped.setAlpha(i);
+    this.alpha = i;
+    getWrapped().setAlpha(i);
   }
 
+  @Override
   protected void onBoundsChange(Rect bounds) {
     RenderOptions renderOptions = new RenderOptions();
     renderOptions.viewPort(bounds.left, bounds.top, bounds.width(), bounds.height());
     wrapped = new PictureDrawable(svg.renderToPicture(renderOptions));
     wrapped.setBounds(bounds);
+    wrapped.setColorFilter(colorFilter);
+    wrapped.setAlpha(alpha);
   }
 
   public int getIntrinsicWidth() {
@@ -55,11 +65,12 @@ public class SvgDrawable extends Drawable{
 
   @Override
   public void setColorFilter(@Nullable ColorFilter colorFilter) {
-    wrapped.setColorFilter(colorFilter);
+    this.colorFilter = colorFilter;
+    getWrapped().setColorFilter(colorFilter);
   }
 
   @Override
   public int getOpacity() {
-    return wrapped.getOpacity();
+    return getWrapped().getOpacity();
   }
 }
