@@ -3,12 +3,10 @@ package org.kobjects.graphics;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Picture;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.PictureDrawable;
 import android.graphics.drawable.ScaleDrawable;
 import android.view.Gravity;
 import android.view.View;
@@ -18,6 +16,7 @@ import android.widget.ImageView;
 import androidx.appcompat.widget.AppCompatImageView;
 
 import com.caverock.androidsvg.SVG;
+import com.caverock.androidsvg.SVGParseException;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -31,6 +30,18 @@ import java.util.Objects;
 public class Sprite extends PositionedViewHolder<ImageView>  {
 
   public static final String DEFAULT_FACE = "\ud83d\ude03";
+
+  static SVG ERROR_SVG;
+  static {
+    try {
+      ERROR_SVG = SVG.getFromString("" +
+          "<svg version=\"1.1\" baseProfile=\"full\" width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">" +
+          "<circle cx=\"100\" cy=\"100\" r=\"80\" fill=\"red\" />" +
+          "</svg>");
+    } catch (SVGParseException e) {
+      throw new RuntimeException();
+    }
+  }
 
   // TODO: add a static SVG that can be used to mark loading errors.
   static Map<String, SVG> svgCache = new HashMap<>();
@@ -164,7 +175,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
       } else {
         synchronized (svgCache) {
           SVG svg = svgCache.get(face);
-          if (svg != null) {
+          if (svg != null && svg != ERROR_SVG) {
             view.wrapped.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
             drawable = new SvgDrawable(svg);
           } else {
@@ -533,8 +544,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
 
     new Thread(() -> {
       try {
-        URL url = new URL("https://twemoji.maxcdn.com/svg/" + Integer.toHexString(codePoint) + ".svg");
-        System.out.println("************ Requesting SVG url: " + url);
+        URL url = new URL("https://twemoji.maxcdn.com/v/latest/svg/" + Integer.toHexString(codePoint) + ".svg");
         InputStream is = url.openConnection().getInputStream();
         SVG svg = SVG.getFromInputStream(is);
         is.close();
@@ -546,6 +556,9 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
         requestSync(true);
       } catch (Exception e) {
         e.printStackTrace();
+        synchronized (svgCache) {
+          svgCache.put(name, ERROR_SVG);
+        }
       }
 
     }).start();
