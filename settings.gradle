@@ -1,2 +1,2 @@
-include ':demo'
+include ':spritedemo'
 include ':core'

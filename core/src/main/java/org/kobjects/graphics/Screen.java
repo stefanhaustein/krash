@@ -8,14 +8,19 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.WeakHashMap;
 
-public class Screen extends ViewHolder<FrameLayout> {
+public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver {
   public final Activity activity;
   /**
    * Multiply with scale to get from virtual coordinates to px, divide to get from px to
@@ -26,15 +31,16 @@ public class Screen extends ViewHolder<FrameLayout> {
   Bitmap bitmap;
   float bitmapScale;
   public Dpad dpad;
+  private Timer timer;
 
   /**
    * Contains all positioned view holders including children.
    */
   Set<PositionedViewHolder<?>> allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
 
-
-  public Screen(@NonNull Activity activity) {
+  public Screen(AppCompatActivity activity) {
     super(new FrameLayout(activity));
+    activity.getLifecycle().addObserver(this);
     this.activity = activity;
     view.setClipChildren(false);
 
@@ -108,7 +114,30 @@ public class Screen extends ViewHolder<FrameLayout> {
     return view.getHeight() / scale;
   }
 
-  public void animate(float dt) {
+  @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+  public synchronized void onResume() {
+    timer = new Timer();
+    timer.scheduleAtFixedRate(new TimerTask() {
+      long lastCall = System.currentTimeMillis();
+      @Override
+      public void run() {
+        long now = System.currentTimeMillis();
+        long dt = now - lastCall;
+        if (dt > 5) {
+          animate(dt);
+          lastCall = now;
+        }
+      }
+    }, 0, 1000/60);
+  }
+
+  @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+  public synchronized void onPause() {
+    timer.cancel();
+    timer = null;
+  }
+
+  private void animate(float dt) {
     ArrayList<PositionedViewHolder<?>> copy = new ArrayList<>(allWidgets.size());
     synchronized (allWidgets) {
       copy.addAll(allWidgets);

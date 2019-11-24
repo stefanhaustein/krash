@@ -1,8 +1,9 @@
 package org.kobjects.graphics.demo;
 
-import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.vanniktech.emoji.EmojiManager;
 import com.vanniktech.emoji.twitter.TwitterEmojiProvider;
@@ -11,10 +12,7 @@ import org.kobjects.graphics.EdgeMode;
 import org.kobjects.graphics.Screen;
 import org.kobjects.graphics.Sprite;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -45,17 +43,5 @@ public class MainActivity extends Activity {
     ghost.setEdgeMode(EdgeMode.WRAP);
     ghost.say("Wrap");
 
-    new Timer().scheduleAtFixedRate(new TimerTask() {
-      long lastCall = System.currentTimeMillis();
-      @Override
-      public void run() {
-        long now = System.currentTimeMillis();
-        long dt = now - lastCall;
-        if (dt > 5) {
-          screen.animate(dt);
-          lastCall = now;
-        }
-      }
-    }, 0, 1000/60);
   }
 }
