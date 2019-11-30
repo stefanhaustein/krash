@@ -1,4 +1,4 @@
-package org.kobjects.graphics.demo;
+package org.kobjects.graphics.demo.sprites;
 
 import android.graphics.Color;
 import android.os.Bundle;

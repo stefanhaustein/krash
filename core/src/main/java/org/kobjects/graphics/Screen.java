@@ -2,6 +2,10 @@ package org.kobjects.graphics;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatImageView;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
@@ -21,6 +26,9 @@ import java.util.TimerTask;
 import java.util.WeakHashMap;
 
 public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver {
+
+  private final static boolean DEBUG = false;
+
   public final Activity activity;
   /**
    * Multiply with scale to get from virtual coordinates to px, divide to get from px to
@@ -46,12 +54,38 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
 
     int size = Dimensions.dpToPx(activity,200);
 
-    bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+    bitmap = Bitmap.createBitmap(2 * size, 2 * size, Bitmap.Config.ARGB_8888);
     bitmapScale = size / 200f;
 
-    imageView = new ImageView(activity);
+    if (DEBUG) {
+      Canvas canvas = new Canvas(bitmap);
+      Paint debugPaint = new Paint();
+      debugPaint.setStyle(Paint.Style.STROKE);
+      debugPaint.setColor(Color.RED);
+
+      canvas.drawLine(0, 0, 10000, 10000, debugPaint);
+      canvas.drawLine(bitmap.getWidth(), 0, 0, bitmap.getHeight(), debugPaint);
+      canvas.drawLine(bitmap.getWidth() / 2, 0, bitmap.getWidth() / 2, 10000, debugPaint);
+      canvas.drawLine(0, bitmap.getHeight() / 2, 10000, bitmap.getHeight() / 2, debugPaint);
+      canvas.drawRect(bitmap.getWidth() / 4, bitmap.getHeight() / 4, bitmap.getWidth() * 3 / 4, 3 * bitmap.getHeight() / 4, debugPaint);
+    }
+    imageView = new AppCompatImageView(activity) {
+      @Override
+      protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        int w = r-l;
+        int h = b-t;
+        System.out.println("************** onLayout"+w + " x "+ h);
+        Matrix matrix = new Matrix();
+        float targetSize = 2 * Math.min(w, h);
+        float scale = targetSize / bitmap.getWidth();
+        matrix.setScale(scale, scale);
+        matrix.postTranslate((w - targetSize) / 2, (h - targetSize) / 2);
+        setImageMatrix(matrix);
+      }
+    };
     imageView.setImageBitmap(bitmap);
-    imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    imageView.setScaleType(ImageView.ScaleType.MATRIX);
 
     dpad = new Dpad(this);
 

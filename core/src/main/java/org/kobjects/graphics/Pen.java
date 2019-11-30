@@ -15,11 +15,11 @@ public class Pen {
   Paint clearPaint;
 
   float sx(float x) {
-    return (x + 100) * screen.bitmapScale;
+    return (x + 200) * screen.bitmapScale;
   }
 
   float sy(float y) {
-    return (100 - y) * screen.bitmapScale;
+    return (200 - y) * screen.bitmapScale;
   }
 
   public Pen(Screen screen) {
