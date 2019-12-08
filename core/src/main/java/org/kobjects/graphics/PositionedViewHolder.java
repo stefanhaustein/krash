@@ -212,13 +212,11 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
     return true;
   }
 
-  // Used internally
-  boolean getVisible() {
+  public boolean getVisible() {
     return visible;
   }
 
-  // Used for bubble management internally -- clients should use opacity
-  boolean setVisible(boolean value) {
+  public boolean setVisible(boolean value) {
     if (value == visible) {
       return false;
     }
