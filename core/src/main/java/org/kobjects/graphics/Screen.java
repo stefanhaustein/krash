@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,7 +28,7 @@ import java.util.WeakHashMap;
 
 public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver {
 
-  private final static boolean DEBUG = false; // true;
+  private final static boolean DEBUG = false;
 
   public final Activity activity;
   /**
@@ -64,7 +65,9 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
       @Override
       public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
         if (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom) {
-          scale = ((float) Math.min(right - left, bottom - top)) / ((float) Math.max(logicalViewportHeight, logicalViewportWidth));
+          float scaleX = ((float) right - left) / logicalViewportWidth;
+          float scaleY = ((float) bottom - top) / logicalViewportHeight;
+          scale = Math.min(scaleX, scaleY);
           dpad.requestSync();
           synchronized (allWidgets) {
             for (PositionedViewHolder<?> widget : allWidgets) {
@@ -110,6 +113,9 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
     return new Pen(this);
   }
 
+  public void resetViewport() {
+    setViewport(200, 200, false);
+  }
 
   public void setViewport(int logicalViewportWidth, int logicalViewportHeight, boolean physicalPixels) {
     if (logicalViewportWidth == this.logicalViewportWidth
@@ -166,7 +172,9 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
       }
 
       activity.runOnUiThread(() -> {
-        imageView.setImageBitmap(bitmap);
+        BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
+        bitmapDrawable.setFilterBitmap(!physicalPixels);
+        imageView.setImageDrawable(bitmapDrawable);
         imageView.requestLayout();
       });
     }
