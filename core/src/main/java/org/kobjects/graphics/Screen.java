@@ -64,7 +64,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
       @Override
       public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
         if (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom) {
-          scale = Math.min(right - left, bottom - top) / Math.max(logicalViewportHeight, logicalViewportWidth);
+          scale = ((float) Math.min(right - left, bottom - top)) / ((float) Math.max(logicalViewportHeight, logicalViewportWidth));
           dpad.requestSync();
           synchronized (allWidgets) {
             for (PositionedViewHolder<?> widget : allWidgets) {
@@ -127,52 +127,50 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
 
-  Bitmap getBitmap() {
-    if (bitmap != null) {
-      return bitmap;
+  public Bitmap getBitmap() {
+    if (bitmap == null) {
+      int physicalInnerWidth;
+      int physicalInnerHeight;
+      if (physicalPixels) {
+        physicalInnerWidth = logicalViewportWidth;
+        physicalInnerHeight = logicalViewportHeight;
+        bitmapScale = 1;
+      } else {
+        // This is a bit arbitrary at the moment...
+        physicalInnerWidth = Dimensions.dpToPx(activity, logicalViewportWidth);
+        physicalInnerHeight = Dimensions.dpToPx(activity, logicalViewportHeight);
+        bitmapScale = ((float) physicalInnerWidth) / logicalViewportWidth;
+      }
+      bitmap = Bitmap.createBitmap(2 * physicalInnerHeight, 2 * physicalInnerWidth, Bitmap.Config.ARGB_8888);
+
+      if (DEBUG) {
+        Canvas canvas = new Canvas(bitmap);
+        Paint debugPaint = new Paint();
+        debugPaint.setStyle(Paint.Style.STROKE);
+        debugPaint.setColor(Color.RED);
+
+        canvas.drawLine(0, 0, bitmap.getWidth(), bitmap.getHeight(), debugPaint);
+        canvas.drawLine(bitmap.getWidth(), 0, 0, bitmap.getHeight(), debugPaint);
+        canvas.drawLine(bitmap.getWidth() / 2, 0, bitmap.getWidth() / 2, 10000, debugPaint);
+        canvas.drawLine(0, bitmap.getHeight() / 2, 10000, bitmap.getHeight() / 2, debugPaint);
+        canvas.drawRect(
+            bitmap.getWidth() / 2 - physicalInnerWidth / 2,
+            bitmap.getHeight() / 2 - physicalInnerHeight / 2,
+            bitmap.getWidth() / 2 + physicalInnerWidth / 2,
+            bitmap.getHeight() / 2 + physicalInnerHeight / 2,
+            debugPaint);
+      }
+
+      if (imageView == null) {
+        throw new NullPointerException();
+      }
+
+      activity.runOnUiThread(() -> {
+        imageView.setImageBitmap(bitmap);
+        imageView.requestLayout();
+      });
     }
-
-    int physicalInnerWidth;
-    int physicalInnerHeight;
-    if (physicalPixels) {
-      physicalInnerWidth = logicalViewportWidth;
-      physicalInnerHeight = logicalViewportHeight;
-      bitmapScale = 1;
-    } else {
-      // This is a bit arbitrary at the moment...
-      physicalInnerWidth = Dimensions.dpToPx(activity, logicalViewportWidth);
-      physicalInnerHeight = Dimensions.dpToPx(activity, logicalViewportHeight);
-      bitmapScale = ((float) physicalInnerWidth) / logicalViewportWidth;
-    }
-    bitmap = Bitmap.createBitmap(2 * physicalInnerHeight, 2 * physicalInnerWidth, Bitmap.Config.ARGB_8888);
-
-    if (DEBUG) {
-      Canvas canvas = new Canvas(bitmap);
-      Paint debugPaint = new Paint();
-      debugPaint.setStyle(Paint.Style.STROKE);
-      debugPaint.setColor(Color.RED);
-
-      canvas.drawLine(0, 0, bitmap.getWidth(), bitmap.getHeight(), debugPaint);
-      canvas.drawLine(bitmap.getWidth(), 0, 0, bitmap.getHeight(), debugPaint);
-      canvas.drawLine(bitmap.getWidth() / 2, 0, bitmap.getWidth() / 2, 10000, debugPaint);
-      canvas.drawLine(0, bitmap.getHeight() / 2, 10000, bitmap.getHeight() / 2, debugPaint);
-      canvas.drawRect(
-          bitmap.getWidth() / 2 - physicalInnerWidth / 2,
-          bitmap.getHeight() / 2 - physicalInnerHeight / 2,
-          bitmap.getWidth() / 2 + physicalInnerWidth / 2,
-          bitmap.getHeight() / 2 + physicalInnerHeight /2,
-          debugPaint);
-    }
-
-    if (imageView == null) {
-      throw new NullPointerException();
-    }
-
-    activity.runOnUiThread(() -> {
-      imageView.setImageBitmap(bitmap);
-      imageView.requestLayout();
-    });
-
+    imageView.postInvalidate();
     return bitmap;
   }
 
