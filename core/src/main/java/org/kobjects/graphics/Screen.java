@@ -58,12 +58,9 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
     view.setClipChildren(false);
     activity.getLifecycle().addObserver(this);
 
-
     dpad = new Dpad(this);
 
-    view.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-      @Override
-      public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+    view.addOnLayoutChangeListener((viw, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
         if (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom) {
           float scaleX = ((float) right - left) / logicalViewportWidth;
           float scaleY = ((float) bottom - top) / logicalViewportHeight;
@@ -74,7 +71,6 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
               widget.requestSync(true);
             }
           }
-        }
       }
     });
 
@@ -196,7 +192,6 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
         widget.setVisible(false);
       }
     }
-    allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
   }
 
   public void cls() {
