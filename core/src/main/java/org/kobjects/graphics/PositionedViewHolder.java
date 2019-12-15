@@ -24,7 +24,7 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
 
   PositionedViewHolder(Screen screen, T view) {
     super(new AnchorLayout<>(view));
-    synchronized (screen.allWidgets) {
+    synchronized (screen.lock) {
       screen.allWidgets.add(this);
     }
     this.screen = screen;

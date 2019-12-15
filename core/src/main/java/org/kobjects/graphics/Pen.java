@@ -1,5 +1,6 @@
 package org.kobjects.graphics;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -7,19 +8,19 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 
 public class Pen {
-  Screen screen;
-  //    Bitmap bitmap;
-  Canvas canvas;
-  Paint linePaint = new Paint();
-  Paint fillPaint = new Paint();
-  Paint clearPaint;
+  private final Screen screen;
+  private Bitmap currentBitmap;
+  private Canvas canvas;
+  private final Paint linePaint = new Paint();
+  private final Paint fillPaint = new Paint();
+  private Paint clearPaint;
 
   float sx(float x) {
     return x * screen.bitmapScale + screen.getBitmap().getWidth() / 2;
   }
 
   float sy(float y) {
-    return y * screen.bitmapScale + screen.getBitmap().getHeight() / 2;
+    return -y * screen.bitmapScale + screen.getBitmap().getHeight() / 2;
   }
 
   public Pen(Screen screen) {
@@ -37,8 +38,9 @@ public class Pen {
   }
 
   void validate() {
-    if (canvas == null) {
-      canvas = new Canvas(screen.getBitmap());
+    if (canvas == null || screen.getBitmap() != currentBitmap) {
+      currentBitmap = screen.getBitmap();
+      canvas = new Canvas(currentBitmap);
     }
     screen.view.postInvalidate();
   }

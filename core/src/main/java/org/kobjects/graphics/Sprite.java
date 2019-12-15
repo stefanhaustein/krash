@@ -432,7 +432,7 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
     if (!shouldBeAttached()) {
       return Collections.emptyList();
     }
-    synchronized (screen.allWidgets) {
+    synchronized (screen.lock) {
       ArrayList<Sprite> result = new ArrayList<>();
       // StringBuilder debug = new StringBuilder();
       for (PositionedViewHolder<?> widget : screen.allWidgets) {

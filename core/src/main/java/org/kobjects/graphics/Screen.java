@@ -30,21 +30,25 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
 
   private final static boolean DEBUG = false;
 
-  public final Activity activity;
-  /**
-   * Multiply with scale to get from virtual coordinates to px, divide to get from px to
-   * virtual coordinates.
-   */
-  public float scale;
-
   private ImageView imageView;
   private Bitmap bitmap;
-  float bitmapScale;
-  public Dpad dpad;
   private Timer timer;
   private int logicalViewportHeight = 200;
   private int logicalViewportWidth = 200;
   private boolean physicalPixels;
+
+  final Activity activity;
+  /**
+   * Multiply with scale to get from virtual coordinates to px, divide to get from px to
+   * virtual coordinates.
+   */
+
+  float bitmapScale;
+  final Object lock = new Object();
+
+  public float scale;
+  public Dpad dpad;
+
 
   /**
    * Contains all positioned view holders including children.
@@ -84,20 +88,20 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
       @Override
       protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        if (bitmap == null) {
-          return;
+        Bitmap bitmap = Screen.this.bitmap;
+        if (bitmap != null) {
+          float availableWidth = right - left;
+          float availableHeight = bottom - top;
+          float physicalInnerWidth = bitmap.getHeight() / 2; // Width / height swap is intentional!
+          float physicalInnerHeight = bitmap.getWidth() / 2;
+          float scaleX = availableWidth / physicalInnerWidth;
+          float scaleY = availableHeight / physicalInnerHeight;
+          float scale = Math.min(scaleX, scaleY);
+          Matrix matrix = new Matrix();
+          matrix.setScale(scale, scale);
+          matrix.postTranslate((availableWidth - bitmap.getWidth() * scale) / 2, (availableHeight - bitmap.getHeight() * scale) / 2);
+          setImageMatrix(matrix);
         }
-        float availableWidth = right - left;
-        float availableHeight = bottom - top;
-        float physicalInnerWidth = bitmap.getHeight() / 2; // Width / height swap is intentional!
-        float physicalInnerHeight = bitmap.getWidth() / 2;
-        float scaleX = availableWidth / physicalInnerWidth;
-        float scaleY = availableHeight / physicalInnerHeight;
-        float scale = Math.min(scaleX, scaleY);
-        Matrix matrix = new Matrix();
-        matrix.setScale(scale, scale);
-        matrix.postTranslate((availableWidth - bitmap.getWidth() * scale) / 2, (availableHeight - bitmap.getHeight() * scale) / 2);
-        setImageMatrix(matrix);
       }
     };
     imageView.setScaleType(ImageView.ScaleType.MATRIX);
@@ -114,68 +118,68 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
   public void setViewport(int logicalViewportWidth, int logicalViewportHeight, boolean physicalPixels) {
-    if (logicalViewportWidth == this.logicalViewportWidth
-        && logicalViewportHeight == this.logicalViewportHeight
-        && physicalPixels == this.physicalPixels) {
-      return;
-    }
-    this.physicalPixels = physicalPixels;
-    this.logicalViewportHeight = logicalViewportHeight;
-    this.logicalViewportWidth = logicalViewportWidth;
-
-    if (bitmap != null) {
-      bitmap = null;
+    synchronized (lock) {
+      if (logicalViewportWidth != this.logicalViewportWidth
+          || logicalViewportHeight != this.logicalViewportHeight
+          || physicalPixels != this.physicalPixels) {
+        this.physicalPixels = physicalPixels;
+        this.logicalViewportHeight = logicalViewportHeight;
+        this.logicalViewportWidth = logicalViewportWidth;
+        bitmap = null;
+      }
     }
   }
 
 
   public Bitmap getBitmap() {
-    if (bitmap == null) {
-      int physicalInnerWidth;
-      int physicalInnerHeight;
-      if (physicalPixels) {
-        physicalInnerWidth = logicalViewportWidth;
-        physicalInnerHeight = logicalViewportHeight;
-        bitmapScale = 1;
-      } else {
-        // This is a bit arbitrary at the moment...
-        physicalInnerWidth = Dimensions.dpToPx(activity, logicalViewportWidth);
-        physicalInnerHeight = Dimensions.dpToPx(activity, logicalViewportHeight);
-        bitmapScale = ((float) physicalInnerWidth) / logicalViewportWidth;
+    synchronized (lock) {
+      if (bitmap == null) {
+        int physicalInnerWidth;
+        int physicalInnerHeight;
+        if (physicalPixels) {
+          physicalInnerWidth = logicalViewportWidth;
+          physicalInnerHeight = logicalViewportHeight;
+          bitmapScale = 1;
+        } else {
+          // This is a bit arbitrary at the moment...
+          physicalInnerWidth = Dimensions.dpToPx(activity, logicalViewportWidth);
+          physicalInnerHeight = Dimensions.dpToPx(activity, logicalViewportHeight);
+          bitmapScale = ((float) physicalInnerWidth) / logicalViewportWidth;
+        }
+        bitmap = Bitmap.createBitmap(2 * physicalInnerHeight, 2 * physicalInnerWidth, Bitmap.Config.ARGB_8888);
+
+        if (DEBUG) {
+          Canvas canvas = new Canvas(bitmap);
+          Paint debugPaint = new Paint();
+          debugPaint.setStyle(Paint.Style.STROKE);
+          debugPaint.setColor(Color.RED);
+
+          canvas.drawLine(0, 0, bitmap.getWidth(), bitmap.getHeight(), debugPaint);
+          canvas.drawLine(bitmap.getWidth(), 0, 0, bitmap.getHeight(), debugPaint);
+          canvas.drawLine(bitmap.getWidth() / 2, 0, bitmap.getWidth() / 2, 10000, debugPaint);
+          canvas.drawLine(0, bitmap.getHeight() / 2, 10000, bitmap.getHeight() / 2, debugPaint);
+          canvas.drawRect(
+              bitmap.getWidth() / 2 - physicalInnerWidth / 2,
+              bitmap.getHeight() / 2 - physicalInnerHeight / 2,
+              bitmap.getWidth() / 2 + physicalInnerWidth / 2,
+              bitmap.getHeight() / 2 + physicalInnerHeight / 2,
+              debugPaint);
+        }
+
+        if (imageView == null) {
+          throw new NullPointerException();
+        }
+
+        activity.runOnUiThread(() -> {
+          BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
+          bitmapDrawable.setFilterBitmap(!physicalPixels);
+          imageView.setImageDrawable(bitmapDrawable);
+          imageView.requestLayout();
+        });
       }
-      bitmap = Bitmap.createBitmap(2 * physicalInnerHeight, 2 * physicalInnerWidth, Bitmap.Config.ARGB_8888);
-
-      if (DEBUG) {
-        Canvas canvas = new Canvas(bitmap);
-        Paint debugPaint = new Paint();
-        debugPaint.setStyle(Paint.Style.STROKE);
-        debugPaint.setColor(Color.RED);
-
-        canvas.drawLine(0, 0, bitmap.getWidth(), bitmap.getHeight(), debugPaint);
-        canvas.drawLine(bitmap.getWidth(), 0, 0, bitmap.getHeight(), debugPaint);
-        canvas.drawLine(bitmap.getWidth() / 2, 0, bitmap.getWidth() / 2, 10000, debugPaint);
-        canvas.drawLine(0, bitmap.getHeight() / 2, 10000, bitmap.getHeight() / 2, debugPaint);
-        canvas.drawRect(
-            bitmap.getWidth() / 2 - physicalInnerWidth / 2,
-            bitmap.getHeight() / 2 - physicalInnerHeight / 2,
-            bitmap.getWidth() / 2 + physicalInnerWidth / 2,
-            bitmap.getHeight() / 2 + physicalInnerHeight / 2,
-            debugPaint);
-      }
-
-      if (imageView == null) {
-        throw new NullPointerException();
-      }
-
-      activity.runOnUiThread(() -> {
-        BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
-        bitmapDrawable.setFilterBitmap(!physicalPixels);
-        imageView.setImageDrawable(bitmapDrawable);
-        imageView.requestLayout();
-      });
+      imageView.postInvalidate();
+      return bitmap;
     }
-    imageView.postInvalidate();
-    return bitmap;
   }
 
 
@@ -186,8 +190,8 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
   public void clearAll() {
-    cls();
-    synchronized (allWidgets) {
+    synchronized (lock) {
+      cls();
       for (PositionedViewHolder<?> widget : allWidgets) {
         widget.setVisible(false);
       }
@@ -195,7 +199,11 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
   public void cls() {
-    bitmap.eraseColor(0);
+    synchronized (lock) {
+      if (bitmap != null) {
+        bitmap.eraseColor(0);
+      }
+    }
     dpad.setVisible(false);
   }
 
@@ -218,31 +226,36 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
   @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-  public synchronized void onResume() {
-    timer = new Timer();
-    timer.scheduleAtFixedRate(new TimerTask() {
-      long lastCall = System.currentTimeMillis();
-      @Override
-      public void run() {
-        long now = System.currentTimeMillis();
-        long dt = now - lastCall;
-        if (dt > 5) {
-          animate(dt);
-          lastCall = now;
+  public void onResume() {
+    synchronized (lock) {
+      timer = new Timer();
+      timer.scheduleAtFixedRate(new TimerTask() {
+        long lastCall = System.currentTimeMillis();
+
+        @Override
+        public void run() {
+          long now = System.currentTimeMillis();
+          long dt = now - lastCall;
+          if (dt > 5) {
+            animate(dt);
+            lastCall = now;
+          }
         }
-      }
-    }, 0, 1000/60);
+      }, 0, 1000 / 60);
+    }
   }
 
   @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-  public synchronized void onPause() {
-    timer.cancel();
-    timer = null;
+  public void onPause() {
+    synchronized (lock) {
+      timer.cancel();
+      timer = null;
+    }
   }
 
   private void animate(float dt) {
     ArrayList<PositionedViewHolder<?>> copy = new ArrayList<>(allWidgets.size());
-    synchronized (allWidgets) {
+    synchronized (lock) {
       copy.addAll(allWidgets);
     }
     for (PositionedViewHolder<?> widget : copy) {

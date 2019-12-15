@@ -21,16 +21,14 @@ public class MainActivity extends AppCompatActivity {
     EmojiManager.install(new TwitterEmojiProvider());
 
     Screen screen = new Screen(this);
-    screen.setViewport(320, 200, true);
+  //  screen.setViewport(320, 200, true);
 
     screen.view.setBackgroundColor(Color.DKGRAY);
     setContentView(screen.view);
 
     // Size comparison
     Pen pen = screen.createPen();
-    pen.setLineColor(Color.RED);
     pen.drawRect(-15, -15, 30, 30);
-    pen.drawLine(-15, -15, 15, 15);
 
 
     Sprite ball = new Sprite(screen);
