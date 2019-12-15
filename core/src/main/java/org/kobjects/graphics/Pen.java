@@ -15,11 +15,11 @@ public class Pen {
   Paint clearPaint;
 
   float sx(float x) {
-    return (x + 200) * screen.bitmapScale;
+    return x * screen.bitmapScale + screen.getBitmap().getWidth() / 2;
   }
 
   float sy(float y) {
-    return (200 - y) * screen.bitmapScale;
+    return y * screen.bitmapScale + screen.getBitmap().getHeight() / 2;
   }
 
   public Pen(Screen screen) {
@@ -38,7 +38,7 @@ public class Pen {
 
   void validate() {
     if (canvas == null) {
-      canvas = new Canvas(screen.bitmap);
+      canvas = new Canvas(screen.getBitmap());
     }
     screen.view.postInvalidate();
   }

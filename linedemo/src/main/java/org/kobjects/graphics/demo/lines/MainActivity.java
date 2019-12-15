@@ -19,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
     EmojiManager.install(new TwitterEmojiProvider());
 
     Screen screen = new Screen(this);
+    // screen.setViewport(320, 200, true);
 
     screen.view.setBackgroundColor(Color.DKGRAY);
     setContentView(screen.view);
@@ -26,12 +27,19 @@ public class MainActivity extends AppCompatActivity {
 
     new Thread(() -> {
       while (true) {
-        pen.setLineColor((int) (Math.random() * 0xffffff) | 0xff000000);
-        pen.drawLine(
-            (float) (Math.random() * 400 - 200),
-            (float) (Math.random() * 400 - 200),
-            (float) (Math.random() * 400 - 200),
-            (float) (Math.random() * 400 - 200));
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+        for (int i = 0; i < 1; i++) {
+          pen.setLineColor((int) (Math.random() * 0xffffff) | 0xff000000);
+          pen.drawLine(
+              (float) (Math.random() * 1000 - 500),
+              (float) (Math.random() * 1000 - 500),
+              (float) (Math.random() * 1000 - 500),
+              (float) (Math.random() * 1000 - 500));
+        }
       }
     }).start();
   }

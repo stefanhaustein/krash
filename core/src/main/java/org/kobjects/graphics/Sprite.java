@@ -106,9 +106,10 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
   boolean shouldBeAttached() {
     // Top level sprites without children will get checked for physical removal
     if (view.getChildCount() == 1 && anchor instanceof Screen) {
+      // width / height swap is intended here: ranges go up to the double of the opposite dimension
       return opacity > MIN_OPACITY
-          && x - size / 2 < 200 && x + size / 2 > -200
-          && y - size / 2 < 200 && y + size / 2 > -200;
+          && x - size / 2 < screen.getLogicalViewportHeight() && x + size / 2 > -screen.getLogicalViewportHeight()
+          && y - size / 2 < screen.getLogicalViewportWidth() && y + size / 2 > -screen.getLogicalViewportWidth();
     }
     return super.shouldBeAttached();
   }
