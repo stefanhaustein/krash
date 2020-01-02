@@ -182,6 +182,9 @@ public class Sprite extends PositionedViewHolder<ImageView>  {
           } else {
             view.wrapped.setLayerType(View.LAYER_TYPE_HARDWARE, null);
             drawable = Emojis.getDrawable(view.getContext(), face);
+            if (drawable == null) {
+              drawable = Emojis.getDrawable(view.getContext(), "\uD83D\uDEAB");
+            }
           }
         }
       }
