@@ -70,7 +70,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
           float scaleY = ((float) bottom - top) / logicalViewportHeight;
           scale = Math.min(scaleX, scaleY);
           dpad.requestSync();
-          synchronized (allWidgets) {
+          synchronized (lock) {
             for (PositionedViewHolder<?> widget : allWidgets) {
               widget.requestSync(true);
             }
