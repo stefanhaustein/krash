@@ -21,9 +21,11 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
   boolean syncRequested;
 
   ViewHolder<?> anchor;
+  ChangeListenerManager<PositionedViewHolder> changeListenerManager;
 
   PositionedViewHolder(Screen screen, T view) {
     super(new AnchorLayout<>(view));
+    changeListenerManager = new ChangeListenerManager<>(this, screen.executorService);
     synchronized (screen.lock) {
       screen.allWidgets.add(this);
     }
@@ -39,31 +41,32 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
   void requestSync(boolean hard) {
     if (!syncRequested) {
       syncRequested = true;
-      screen.activity.runOnUiThread(() -> {
-        syncRequested = false;
-        view.setVisibility(visible ? View.VISIBLE : View.GONE);
-        view.wrapped.setAlpha(opacity);
-        // visible is used internally to handle bubble visibility and to remove everything on clear, so it
-        // gets special treatment here.
-        boolean shouldBeAttached = visible && shouldBeAttached();
-        ViewGroup expectedParent = shouldBeAttached ? anchor.view : null;
-        if (view.getParent() != expectedParent) {
-          if (view.getParent() != null) {
-            ((ViewGroup) view.getParent()).removeView(view);
+        screen.activity.runOnUiThread(() -> {
+          syncRequested = false;
+          view.setVisibility(visible ? View.VISIBLE : View.GONE);
+          view.wrapped.setAlpha(opacity);
+          // visible is used internally to handle bubble visibility and to remove everything on clear, so it
+          // gets special treatment here.
+          boolean shouldBeAttached = visible && shouldBeAttached();
+          ViewGroup expectedParent = shouldBeAttached ? anchor.view : null;
+          if (view.getParent() != expectedParent) {
+            if (view.getParent() != null) {
+              ((ViewGroup) view.getParent()).removeView(view);
+            }
+            if (expectedParent == null) {
+              return;
+            }
+            expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
           }
-          if (expectedParent == null) {
-            return;
-          }
-          expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        }
-        syncUi();
+          syncUi();
 
-        view.setTranslationX(getRelativeX() * screen.scale);
-        view.setTranslationY(getRelativeY() * screen.scale);
+          view.setTranslationX(getRelativeX() * screen.scale);
+          view.setTranslationY(getRelativeY() * screen.scale);
 
-        view.setTranslationZ(z);
-      });
+          view.setTranslationZ(z);
+        });
     }
+    changeListenerManager.notifyChanged();
   }
 
 

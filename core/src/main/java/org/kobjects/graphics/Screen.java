@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver {
 
@@ -36,6 +38,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   private int logicalViewportHeight = 200;
   private int logicalViewportWidth = 200;
   private boolean physicalPixels;
+  ExecutorService executorService = Executors.newCachedThreadPool();
 
   final Activity activity;
   /**
