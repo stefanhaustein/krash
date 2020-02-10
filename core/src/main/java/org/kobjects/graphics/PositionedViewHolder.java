@@ -4,6 +4,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import java.util.ArrayList;
+
 public abstract class PositionedViewHolder<T extends View> extends ViewHolder<AnchorLayout<T>> {
   public static final double MIN_OPACITY = 0.0001;
 
@@ -21,11 +23,10 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
   boolean syncRequested;
 
   ViewHolder<?> anchor;
-  ChangeListenerManager<PositionedViewHolder> changeListenerManager;
+  private ArrayList<Runnable> changeListeners;
 
   PositionedViewHolder(Screen screen, T view) {
     super(new AnchorLayout<>(view));
-    changeListenerManager = new ChangeListenerManager<>(this, screen.executorService);
     synchronized (screen.lock) {
       screen.allWidgets.add(this);
     }
@@ -64,9 +65,16 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
           view.setTranslationY(getRelativeY() * screen.scale);
 
           view.setTranslationZ(z);
+
+          if (changeListeners != null) {
+            synchronized (changeListeners) {
+              for (Runnable changeListener : changeListeners) {
+                changeListener.run();
+              }
+            }
+          }
         });
     }
-    changeListenerManager.notifyChanged();
   }
 
 
@@ -253,6 +261,18 @@ public abstract class PositionedViewHolder<T extends View> extends ViewHolder<An
     yAlign = newValue;
     requestSync(false);
     return true;
+  }
+
+
+  public void addChangeListener(Runnable changeListener) {
+    synchronized (screen.lock) {
+      if (changeListeners == null) {
+        changeListeners = new ArrayList<>();
+      }
+    }
+    synchronized (changeListeners) {
+      changeListeners.add(changeListener);
+    }
   }
 
 }

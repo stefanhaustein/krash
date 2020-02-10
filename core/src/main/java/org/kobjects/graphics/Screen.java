@@ -8,7 +8,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -25,8 +24,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver {
 
@@ -38,7 +35,6 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   private int logicalViewportHeight = 200;
   private int logicalViewportWidth = 200;
   private boolean physicalPixels;
-  ExecutorService executorService = Executors.newCachedThreadPool();
 
   final Activity activity;
   /**

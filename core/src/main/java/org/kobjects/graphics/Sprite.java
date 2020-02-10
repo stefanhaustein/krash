@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class Sprite extends PositionedViewHolder<ImageView> implements ChangeNotifications<Sprite> {
+public class Sprite extends PositionedViewHolder<ImageView> {
 
   public static final String DEFAULT_FACE = "\ud83d\ude03";
 
@@ -570,8 +570,4 @@ public class Sprite extends PositionedViewHolder<ImageView> implements ChangeNot
 
   }
 
-  @Override
-  public void addChangeListener(ChangeListener<Sprite> changeListener) {
-    changeListenerManager.addChangeListener(changeListener);
-  }
 }
