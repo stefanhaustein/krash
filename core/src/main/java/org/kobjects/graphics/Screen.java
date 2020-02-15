@@ -194,6 +194,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
       for (PositionedViewHolder<?> widget : allWidgets) {
         widget.setVisible(false);
       }
+      allWidgets.clear();
     }
   }
 
