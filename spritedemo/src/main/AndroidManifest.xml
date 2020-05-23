@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.kobjects.graphics.demo.sprites">
+    package="org.kobjects.krash.demo.sprites">
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:label="Sprite Demo" android:theme="@style/Theme.AppCompat" >
-        <activity android:name=".MainActivity">
+        <activity android:name="org.kobjects.krash.demo.sprites.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

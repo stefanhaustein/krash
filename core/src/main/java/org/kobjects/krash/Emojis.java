@@ -1,4 +1,4 @@
-package org.kobjects.graphics;
+package org.kobjects.krash;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;

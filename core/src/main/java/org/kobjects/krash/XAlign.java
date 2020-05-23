@@ -1,4 +1,4 @@
-package org.kobjects.graphics;
+package org.kobjects.krash;
 
 public enum XAlign {
   CENTER, LEFT, RIGHT

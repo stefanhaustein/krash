@@ -1,4 +1,4 @@
-package org.kobjects.graphics;
+package org.kobjects.krash;
 
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;

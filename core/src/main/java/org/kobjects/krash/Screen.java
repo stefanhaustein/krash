@@ -1,4 +1,4 @@
-package org.kobjects.graphics;
+package org.kobjects.krash;
 
 import android.app.Activity;
 import android.graphics.Bitmap;

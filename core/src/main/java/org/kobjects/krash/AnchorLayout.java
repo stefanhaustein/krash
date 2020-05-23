@@ -1,7 +1,6 @@
-package org.kobjects.graphics;
+package org.kobjects.krash;
 
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 

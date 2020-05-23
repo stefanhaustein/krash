@@ -1,4 +1,4 @@
-package org.kobjects.graphics.demo.lines;
+package org.kobjects.krash.demo.lines;
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -8,8 +8,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.vanniktech.emoji.EmojiManager;
 import com.vanniktech.emoji.twitter.TwitterEmojiProvider;
 
-import org.kobjects.graphics.Pen;
-import org.kobjects.graphics.Screen;
+import org.kobjects.krash.Pen;
+import org.kobjects.krash.Screen;
 
 public class MainActivity extends AppCompatActivity {
   @Override
