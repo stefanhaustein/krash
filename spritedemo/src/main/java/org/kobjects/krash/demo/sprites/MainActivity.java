@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     pen.drawRect(-15, -15, 30, 30);
 
 
-    Sprite ball = new Sprite(screen);
+    Sprite ball = screen.createSprite();
     ball.setFace("⚽");
     ball.setSize(30);
     ball.setSpeed(20);
@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     ball.setRotation(-90);
     ball.say("Bounce");
 
-    Sprite ghost = new Sprite(screen);
+    Sprite ghost = screen.createSprite();
     ghost.setFace("\uD83D\uDC7B");
     ghost.setOpacity(0.8f);
     ghost.setSpeed(10);

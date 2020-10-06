@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ScaleDrawable;
 import android.view.Gravity;
@@ -16,10 +15,9 @@ import android.widget.ImageView;
 import androidx.appcompat.widget.AppCompatImageView;
 
 import com.caverock.androidsvg.SVG;
-import com.caverock.androidsvg.SVGParseException;
 
-import java.io.InputStream;
-import java.net.URL;
+import org.kobjects.krash.api.Content;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,21 +28,6 @@ import java.util.Objects;
 public class Sprite extends PositionedViewHolder<ImageView> {
 
   public static final String DEFAULT_FACE = "\ud83d\ude03";
-
-  static SVG ERROR_SVG;
-  static {
-    try {
-      ERROR_SVG = SVG.getFromString("" +
-          "<svg version=\"1.1\" baseProfile=\"full\" width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\">" +
-          "<circle cx=\"100\" cy=\"100\" r=\"80\" fill=\"red\" />" +
-          "</svg>");
-    } catch (SVGParseException e) {
-      throw new RuntimeException();
-    }
-  }
-
-  // TODO: add a static SVG that can be used to mark loading errors.
-  static Map<String, SVG> svgCache = new HashMap<>();
 
   private static Canvas testCanvas;
   private static Bitmap testBitmap;
@@ -64,34 +47,34 @@ public class Sprite extends PositionedViewHolder<ImageView> {
   TextBox label;
   TextBox bubble;
   private float size;
-  private String face;
   private float angle;
   private float speed;
   private float direction;
   private float grow;
   private float fade;
   private float rotation;
-  private Bitmap bitmap;
+
+  private AndroidContent content;
 
   private EdgeMode edgeMode = EdgeMode.NONE;
 
-  private boolean imageDirty = true;
+  private boolean contentDirty = true;
   private boolean sizeDirty = true;
 
   private float[] distances = new float[64];
 
 
-  public Sprite(Screen screen) {
+  Sprite(Screen screen) {
     super(screen, new AppCompatImageView(screen.activity));
 
    view.wrapped.setAdjustViewBounds(true);
    view.wrapped.setScaleType(ImageView.ScaleType.FIT_XY);
 
-    setFace(DEFAULT_FACE);
+    setContent(new AndroidEmojiContent(screen, DEFAULT_FACE));
   }
 
   public String getFace() {
-    return face;
+    return content instanceof AndroidEmojiContent ? ((AndroidEmojiContent) content).codepoint : "";
   }
 
   public float getSize() {
@@ -164,34 +147,13 @@ public class Sprite extends PositionedViewHolder<ImageView> {
 
   @Override
   public void syncUi() {
-    if (imageDirty) {
-      imageDirty = false;
-      Drawable drawable;
-      if (bitmap != null) {
-        BitmapDrawable bitmapDrawable = new BitmapDrawable(view.getResources(), bitmap);
-        bitmapDrawable.setFilterBitmap(false);
-       // bitmapDrawable.setAntiAlias(false);
-        drawable = bitmapDrawable;
-        view.wrapped.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-      } else {
-        synchronized (svgCache) {
-          SVG svg = svgCache.get(face);
-          if (svg != null && svg != ERROR_SVG) {
-            view.wrapped.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            drawable = new SvgDrawable(svg);
-          } else {
-            view.wrapped.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-            drawable = Emojis.getDrawable(view.getContext(), face);
-            if (drawable == null) {
-              drawable = Emojis.getDrawable(view.getContext(), "\uD83D\uDEAB");
-            }
-          }
-        }
-      }
+    if (contentDirty) {
+      contentDirty = false;
+      Drawable drawable = content.getDrawable();
+      view.wrapped.setLayerType(drawable instanceof SvgDrawable ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_HARDWARE, null);
 
       fillDistanceArray(drawable);
       view.wrapped.setImageDrawable(drawable);
-
     }
 
     if (sizeDirty) {
@@ -268,10 +230,7 @@ public class Sprite extends PositionedViewHolder<ImageView> {
   }
 
   public void setBitmap(Bitmap bitmap) {
-    this.bitmap = bitmap;
-    this.face = "";
-    this.imageDirty = true;
-    requestSync(false);
+    setContent(new AndroidBitmapContent(screen, bitmap));
   }
 
   public boolean setBubble(TextBox bubble) {
@@ -292,17 +251,17 @@ public class Sprite extends PositionedViewHolder<ImageView> {
   }
 
   public boolean setFace(String face) {
-    if (Objects.equals(face, this.face)) {
+    return setContent(new AndroidEmojiContent(screen, face));
+  }
+
+
+  public boolean setContent(Content content) {
+    if (Objects.equals(content, this.content)) {
       return false;
     }
 
-    synchronized (svgCache) {
-      if (svgCache.get(face) == null) {
-        requestSvg(face);
-      }
-    }
-    this.face = face;
-    imageDirty = true;
+    this.content = (AndroidContent) content;
+    contentDirty = true;
     requestSync(true);
     return true;
   }
@@ -543,31 +502,5 @@ public class Sprite extends PositionedViewHolder<ImageView> {
   }
 
 
-  void requestSvg(String name) {
-    int codePoint = Character.codePointAt(name, 0);
-
-    new Thread(() -> {
-      try {
-        URL url = new URL("https://twemoji.maxcdn.com/v/latest/svg/" + Integer.toHexString(codePoint) + ".svg");
-        InputStream is = url.openConnection().getInputStream();
-        SVG svg = SVG.getFromInputStream(is);
-        is.close();
-
-        synchronized (svgCache) {
-          svgCache.put(name, svg);
-        }
-        imageDirty = true;
-        requestSync(true);
-      } catch (Exception e) {
-        e.printStackTrace();
-        synchronized (svgCache) {
-          svgCache.put(name, ERROR_SVG);
-        }
-      }
-
-    }).start();
-
-
-  }
 
 }

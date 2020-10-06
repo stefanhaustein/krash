@@ -207,6 +207,10 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
     dpad.setVisible(false);
   }
 
+  public Sprite createSprite() {
+    return new Sprite(this);
+  }
+
   @Override
   public float getWidth() {
     return view.getWidth() / scale;
