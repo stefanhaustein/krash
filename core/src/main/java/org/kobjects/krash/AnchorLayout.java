@@ -10,16 +10,24 @@ import android.widget.FrameLayout;
  */
 class AnchorLayout<T extends View> extends FrameLayout {
 
-  final T wrapped;
+  T wrapped;
 
   public AnchorLayout(T wrapped) {
     super(wrapped.getContext());
+    setClipChildren(false);
+    setWrapped(wrapped);
+  }
+
+  void setWrapped(T wrapped) {
+    if (this.wrapped != null) {
+      removeView(this.wrapped);
+    }
     this.wrapped = wrapped;
     if (wrapped != null) {
       addView(wrapped);
     }
-    setClipChildren(false);
   }
+
 
   @Override
   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {

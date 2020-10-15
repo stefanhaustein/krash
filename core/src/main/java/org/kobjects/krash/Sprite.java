@@ -1,36 +1,113 @@
 package org.kobjects.krash;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.ScaleDrawable;
-import android.view.Gravity;
+import android.graphics.Color;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-
-import androidx.appcompat.widget.AppCompatImageView;
-
-import com.caverock.androidsvg.SVG;
 
 import org.kobjects.krash.api.Content;
+import org.kobjects.krash.api.EmojiContent;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.EnumSet;
 
-public class Sprite extends PositionedViewHolder<ImageView> {
-
+public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>> {
+  public static final double MIN_OPACITY = 0.0001;
   public static final String DEFAULT_FACE = "\ud83d\ude03";
 
-  private static Canvas testCanvas;
-  private static Bitmap testBitmap;
+  protected float x;
+  protected float y;
+  protected float z;
+  protected XAlign xAlign = XAlign.CENTER;
+  protected YAlign yAlign = YAlign.CENTER;
+  protected float opacity = 1;
+
+  // For internal use!
+  protected boolean visible = true;
+
+  final Screen screen;
+  protected float[] distances = new float[64];
+  boolean syncRequested;
+
+  ViewHolder<?> anchor;
+  AndroidSprite label;
+  AndroidSprite bubble;
+  float size;
+  float width;
+  float height;
+  int textColor = Color.BLACK;
+  EnumSet<SizeComponent> manualSizeComponents = EnumSet.noneOf(SizeComponent.class);
+  private ArrayList<Runnable> changeListeners;
+  private float angle;
+  private float speed;
+  private float direction;
+  private float grow;
+  private float fade;
+  private float rotation;
+  private int fillColor;
+  private int lineColor;
+  private float lineWidth;
+  private float cornerRadius;
+  private float padding;
+  private EdgeMode edgeMode = EdgeMode.NONE;
+  protected boolean contentDirty = true;
+
+  Sprite(Screen screen, T view) {
+    super(new AnchorLayout<>(view));
+    synchronized (screen.lock) {
+      screen.allWidgets.add(this);
+    }
+    this.screen = screen;
+    this.anchor = screen;
+    view.setTag(this);
+  }
+
+
+
+  public abstract void syncUi();
+
+
+  void requestSync(boolean hard) {
+    if (!syncRequested) {
+      syncRequested = true;
+        screen.activity.runOnUiThread(() -> {
+          syncRequested = false;
+          view.setVisibility(visible ? View.VISIBLE : View.GONE);
+          view.wrapped.setAlpha(opacity);
+          // visible is used internally to handle bubble visibility and to remove everything on clear, so it
+          // gets special treatment here.
+          boolean shouldBeAttached = visible && shouldBeAttached();
+          ViewGroup expectedParent = shouldBeAttached ? anchor.view : null;
+          if (view.getParent() != expectedParent) {
+            if (view.getParent() != null) {
+              ((ViewGroup) view.getParent()).removeView(view);
+            }
+            if (expectedParent == null) {
+              return;
+            }
+            expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+          }
+          syncUi();
+
+          view.setTranslationX(getRelativeX() * screen.scale);
+          view.setTranslationY(getRelativeY() * screen.scale);
+
+          view.setTranslationZ(z);
+
+          if (changeListeners != null) {
+            synchronized (changeListeners) {
+              for (Runnable changeListener : changeListeners) {
+                changeListener.run();
+              }
+            }
+          }
+        });
+    }
+  }
+
 
   static float clockwiseDegToDx(float deg) {
     return (float) Math.cos(Math.toRadians(90 - deg));
@@ -44,157 +121,243 @@ public class Sprite extends PositionedViewHolder<ImageView> {
     return  90 - (float) Math.toDegrees(Math.atan2(dy, dx));
   }
 
-  TextBox label;
-  TextBox bubble;
-  private float size;
-  private float angle;
-  private float speed;
-  private float direction;
-  private float grow;
-  private float fade;
-  private float rotation;
-
-  private AndroidContent content;
-
-  private EdgeMode edgeMode = EdgeMode.NONE;
-
-  private boolean contentDirty = true;
-  private boolean sizeDirty = true;
-
-  private float[] distances = new float[64];
-
-
-  Sprite(Screen screen) {
-    super(screen, new AppCompatImageView(screen.activity));
-
-   view.wrapped.setAdjustViewBounds(true);
-   view.wrapped.setScaleType(ImageView.ScaleType.FIT_XY);
-
-    setContent(new AndroidEmojiContent(screen, DEFAULT_FACE));
-  }
-
   public String getFace() {
-    return content instanceof AndroidEmojiContent ? ((AndroidEmojiContent) content).codepoint : "";
+    return getContent() instanceof EmojiContent ? ((EmojiContent) getContent()).getCodepoint() : "";
   }
+
+  protected abstract Content getContent();
 
   public float getSize() {
-    return size;
+    return (width + height) / 2;
   }
 
   public float getAngle() {
     return angle;
   }
 
-  @Override
   boolean shouldBeAttached() {
-    // Top level sprites without children will get checked for physical removal
-    if (view.getChildCount() == 1 && anchor instanceof Screen) {
-      // width / height swap is intended here: ranges go up to the double of the opposite dimension
-      return opacity > MIN_OPACITY
-          && x - size / 2 < screen.getLogicalViewportHeight() && x + size / 2 > -screen.getLogicalViewportHeight()
-          && y - size / 2 < screen.getLogicalViewportWidth() && y + size / 2 > -screen.getLogicalViewportWidth();
-    }
-    return super.shouldBeAttached();
+    return opacity > MIN_OPACITY;
   }
 
 
-  @Override
-  void requestSync(boolean hard) {
-    super.requestSync(hard);
-    if (hard) {
-      sizeDirty = true;
-    }
+  public ViewHolder<?> getAnchor() {
+    return anchor;
   }
 
-  void fillDistanceArray(Drawable drawable) {
-    if (testCanvas == null) {
-      testBitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888);
-      testCanvas = new Canvas(testBitmap);
-    }
+  public Screen getScreen() {
+    return screen;
+  }
 
-    Paint clearPaint = new Paint();
-    clearPaint.setColor(0);
-    clearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+  public T getWrapped() {
+    return view.wrapped;
+  }
 
-    testCanvas.drawRect(0, 0, 64, 64, clearPaint);
-
-    ScaleDrawable scaleDrawable = new ScaleDrawable(drawable, Gravity.CENTER, 64, 64);
-    scaleDrawable.setLevel(10000);
-    scaleDrawable.setBounds(0, 0, 64, 64);
-    scaleDrawable.draw(testCanvas);
-
-    for (int i = 0; i < 64; i++) {
-      distances[i] = 0;
-      float deg = i * 360 / 64;
-      float dx = clockwiseDegToDx(deg);
-      float dy = clockwiseDegToDy(deg);
-      for (int distance = (int) Math.sqrt(2 * 32 * 32); distance > 0; distance -= 2) {
-        int x = 32 + (int) (dx * distance);
-        int y = 32 + (int) (dy * distance);
-        if (x >= 0 && y >= 0 && x < 64 && y < 64) {
-          if (testBitmap.getPixel(x, y) != 0) {
-            distances[i] = distance/32f;
-            break;
-          } else {
-            testBitmap.setPixel(x, y, i < 8 ? 0xff00ff00 : i < 16 ? 0xff0000ff : 0xffff0000);
-          }
-        }
+  public float getRelativeX() {
+    if (anchor == screen) {
+      switch (xAlign) {
+        case LEFT:
+          return x;
+        case RIGHT:
+          return screen.getWidth() - x - getWidth();
+        default:
+          return (screen.getWidth() - getWidth()) / 2 + x;
+      }
+    } else {
+      switch (xAlign) {
+        case LEFT:
+          return anchor.getWidth() + x;
+        case RIGHT:
+          return -x - getWidth();
+        default:
+          return (anchor.getWidth() - getWidth()) / 2 + x;
       }
     }
-
   }
 
-
-  @Override
-  public void syncUi() {
-    if (contentDirty) {
-      contentDirty = false;
-      Drawable drawable = content.getDrawable();
-      view.wrapped.setLayerType(drawable instanceof SvgDrawable ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_HARDWARE, null);
-
-      fillDistanceArray(drawable);
-      view.wrapped.setImageDrawable(drawable);
+  public float getRelativeY() {
+    if (anchor == screen) {
+      switch (yAlign) {
+        case TOP:
+          return y;
+        case BOTTOM:
+          return screen.getHeight() - getHeight() - y;
+        default:
+          return (screen.getHeight() - getHeight()) / 2 - y;
+      }
+    } else {
+      switch (yAlign) {
+        case TOP:
+          return anchor.getHeight() + y;
+        case BOTTOM:
+          return -y - getHeight();
+        default:
+          return (anchor.getHeight() - getHeight()) / 2 - y;
+      }
     }
-
-    if (sizeDirty) {
-      sizeDirty = false;
-
-      int pixelSize = Math.round(screen.scale * size);
-
-   /*   if (face != null && !face.isEmpty()) {
-        synchronized (svgCache) {
-          SVG svg = svgCache.get(face);
-          if (svg != null) {
-            view.wrapped.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            view.wrapped.setImageDrawable(new PictureDrawable(svg.renderToPicture(pixelSize, pixelSize)));
-          }
-        }
-      }*/
-
-          // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
-      view.wrapped.setLayoutParams(new FrameLayout.LayoutParams(pixelSize, pixelSize));
-      view.wrapped.requestLayout();
-      view.requestLayout();
-
-
-    }
-    view.wrapped.setRotation(angle);
   }
 
+  public float getScreenCX() {
+    float result = getRelativeX() + getWidth() / 2;
+    ViewHolder current = anchor;
+    while (current instanceof Sprite) {
+      result += ((Sprite) current).getRelativeX();
+      current = ((Sprite) current).anchor;
+    }
+    return result;
+  }
 
-  public boolean setSize(float size) {
-    if (size == this.size) {
+  public float getScreenCY() {
+    float result = getRelativeY() + getHeight() / 2;
+    ViewHolder current = anchor;
+    while (current instanceof Sprite) {
+      result += ((Sprite) current).getRelativeY();
+      current = ((Sprite) current).anchor;
+    }
+    return result;
+  }
+
+  public float getX() {
+    return x;
+  }
+
+  public float getY() {
+    return y;
+  }
+
+  public float getZ() {
+    return z;
+  }
+
+  public float getOpacity() {
+    return opacity;
+  }
+
+  public boolean setX(float x) {
+    if (x == this.x) {
       return false;
     }
-    this.size = size;
-    sizeDirty = true;
-    requestSync(true);
+    this.x = x;
+    requestSync(false);
     return true;
   }
 
-  public TextBox getLabel() {
+  public boolean setY(float y) {
+    if (y == this.y) {
+      return false;
+    }
+    this.y = y;
+    requestSync(false);
+    return true;
+  }
+
+
+  public boolean setOpacity(float opacity) {
+    opacity = Math.max(0, Math.min(opacity, 1));
+    if (opacity == this.opacity) {
+      return false;
+    }
+    this.opacity = opacity;
+    requestSync(false);
+    return true;
+  }
+
+  public boolean setAnchor(ViewHolder<?> anchor) {
+    if (this.anchor == anchor) {
+      return false;
+    }
+    this.anchor = anchor;
+    requestSync(false);
+    return true;
+  }
+
+  public boolean setZ(float z) {
+    if (z == this.z) {
+      return false;
+    }
+    this.z = z;
+    requestSync(false);
+
+    return true;
+  }
+
+  public boolean getVisible() {
+    return visible;
+  }
+
+  public boolean setVisible(boolean value) {
+    if (value == visible) {
+      return false;
+    }
+    visible = value;
+    requestSync(/*false*/ true);
+    return true;
+  }
+
+  public XAlign getXAlign() {
+    return xAlign;
+  }
+
+  public YAlign getYAlign() {
+    return yAlign;
+  }
+
+  public boolean setXAlign(XAlign newValue) {
+    if (xAlign == newValue) {
+      return false;
+    }
+    xAlign = newValue;
+    requestSync(false);
+    return true;
+  }
+
+
+  public boolean setYAlign(YAlign newValue) {
+    if (yAlign == newValue) {
+      return false;
+    }
+    yAlign = newValue;
+    requestSync(false);
+    return true;
+  }
+
+
+  public void addChangeListener(Runnable changeListener) {
+    synchronized (screen.lock) {
+      if (changeListeners == null) {
+        changeListeners = new ArrayList<>();
+      }
+    }
+    synchronized (changeListeners) {
+      changeListeners.add(changeListener);
+    }
+  }
+
+  public void setText(String text) {
+    setContent(new AndrodTextContent(screen, text));
+  }
+
+  public abstract boolean setContent(Content content);
+
+  public void setSize(float size) {
+    this.size = size;
+    adjustSize(SizeComponent.SIZE);
+  }
+
+  protected abstract void adjustSize(SizeComponent sizeComponent);
+
+  public void setWidth(float width) {
+    this.width = width;
+    adjustSize(SizeComponent.WIDTH);
+  }
+
+  public void setHeight(float height) {
+    this.height = height;
+    adjustSize(SizeComponent.HEIGHT);
+  }
+
+  public AndroidSprite getLabel() {
     if (label == null) {
-      label = new TextBox(screen);
+      label = new AndroidSprite(screen);
       label.setAnchor(this);
       label.setTextColor(0xff000000);
       label.setFillColor(0xffffffff);
@@ -205,18 +368,18 @@ public class Sprite extends PositionedViewHolder<ImageView> {
     return label;
   }
 
-  public boolean setLabel(TextBox bubble) {
-    if (bubble == this.label) {
+  public boolean setLabel(AndroidSprite label) {
+    if (label == this.label) {
       return false;
     }
-    this.label = bubble;
+    this.label = label;
     label.anchor = this;
     return true;
   }
 
-  public TextBox getBubble() {
+  public AndroidSprite getBubble() {
     if (bubble == null) {
-      bubble = new TextBox(screen);
+      bubble = new AndroidSprite(screen);
       bubble.setAnchor(this);
       bubble.setPadding(3);
       bubble.setTextColor(0xff000000);
@@ -233,7 +396,7 @@ public class Sprite extends PositionedViewHolder<ImageView> {
     setContent(new AndroidBitmapContent(screen, bitmap));
   }
 
-  public boolean setBubble(TextBox bubble) {
+  public boolean setBubble(AndroidSprite bubble) {
     if (bubble == this.bubble) {
       return false;
     }
@@ -255,13 +418,56 @@ public class Sprite extends PositionedViewHolder<ImageView> {
   }
 
 
-  public boolean setContent(Content content) {
-    if (Objects.equals(content, this.content)) {
+  public boolean setFillColor(int fillColor) {
+    if (fillColor == this.fillColor) {
       return false;
     }
+    this.fillColor = fillColor;
+    requestSync(false);
+    return true;
+  }
 
-    this.content = (AndroidContent) content;
-    contentDirty = true;
+  public boolean setLineColor(int lineColor) {
+    if (lineColor == this.lineColor) {
+      return false;
+    }
+    this.lineColor = lineColor;
+    requestSync(false);
+    return true;
+  }
+
+  public boolean setTextColor(int textColor) {
+    if (textColor == this.textColor) {
+      return false;
+    }
+    this.textColor = textColor;
+    requestSync(false);
+    return true;
+  }
+
+  public boolean setLineWidth(float lineWidth) {
+    if (lineWidth == this.lineWidth) {
+      return false;
+    }
+    this.lineWidth = lineWidth;
+    requestSync(false);
+    return true;
+  }
+
+  public boolean setCornerRadius(float cornerRadius) {
+    if (cornerRadius == this.cornerRadius) {
+      return false;
+    }
+    this.cornerRadius = cornerRadius;
+    requestSync(false);
+    return true;
+  }
+
+  public boolean setPadding(float padding) {
+    if (padding == this.padding) {
+      return false;
+    }
+    this.padding = padding;
     requestSync(true);
     return true;
   }
@@ -275,20 +481,20 @@ public class Sprite extends PositionedViewHolder<ImageView> {
     return true;
   }
 
-
   @Override
   public float getWidth() {
-    return size;
+    return width;
   }
 
   @Override
   public float getHeight() {
-    return size;
+    return height;
   }
 
   public void say(String text) {
     getBubble().setText(text);
     getBubble().setVisible(!text.isEmpty());
+    getBubble().requestSync(true);
   }
 
   public void animate(float dt) {
@@ -304,7 +510,7 @@ public class Sprite extends PositionedViewHolder<ImageView> {
       y += dy;
 
        if (edgeMode != EdgeMode.NONE && anchor == screen) {
-        float radius = size / 2;
+        float radius = getSize() / 2;
         switch (edgeMode) {
           case WRAP:
             if (dx > 0 && x - radius > screen.getWidth() / 2) {
@@ -339,7 +545,7 @@ public class Sprite extends PositionedViewHolder<ImageView> {
     }
     if (grow != 0F) {
       propertiesChanged = true;
-      size += grow * dt / 1000F;
+      setSize(getSize() + grow * dt / 1000F);
     }
     if (fade != 0F) {
       propertiesChanged = true;
@@ -361,46 +567,46 @@ public class Sprite extends PositionedViewHolder<ImageView> {
     } */
   }
 
-  boolean checkCollision(Sprite other) {
+  boolean checkCollision(AndroidSprite other) {
     float sx = getScreenCX();
     float sy = getScreenCY();
     float distX = other.getScreenCX() - sx;
     float distY = other.getScreenCY() - sy;
-    double minDist = (other.size + size) * 0.5;
+    float size = Math.max(width, height);
+    float otherSize = Math.max(other.width, other.height);
+    double minDist = (otherSize + size) * 0.5;
     float centerDistanceSq = distX * distX + distY * distY;
     if (centerDistanceSq > minDist * minDist) {
       return false;
     }
 
-    float direction = dxDyToClockwiseDeg(distX, distY) + angle;
+    float direction = Sprite.dxDyToClockwiseDeg(distX, distY) + angle;
     int directionIndex = ((int) (direction * 64 / 360)) & 63;
-    float radius = size * distances[directionIndex] / 2;
+    float radius = getSize() * distances[directionIndex] / 2;
 
-    float otherDirection = dxDyToClockwiseDeg(-distX, -distY) + other.angle;
+    float otherDirection = Sprite.dxDyToClockwiseDeg(-distX, -distY) + other.getAngle();
     int otherDirectionIndex = ((int) (otherDirection * 64 / 360)) & 63;
-    float otherRadius = other.size * other.distances[otherDirectionIndex] / 2;
+    float otherRadius = other.getSize() * other.distances[otherDirectionIndex] / 2;
 
     minDist = radius + otherRadius;
 
     return centerDistanceSq < minDist * minDist;
   }
 
-
-
   /**
    * Checks all sprites, as allWidgets is flattened.
    */
-  public Collection<Sprite> collisions() {
+  public Collection<AndroidSprite> collisions() {
     if (!shouldBeAttached()) {
       return Collections.emptyList();
     }
     synchronized (screen.lock) {
-      ArrayList<Sprite> result = new ArrayList<>();
+      ArrayList<AndroidSprite> result = new ArrayList<>();
       // StringBuilder debug = new StringBuilder();
-      for (PositionedViewHolder<?> widget : screen.allWidgets) {
-        if (widget != this && widget instanceof Sprite && widget.shouldBeAttached()) {
-          Sprite other = (Sprite) widget;
-          if (checkCollision((Sprite) widget)) {
+      for (Sprite<?> widget : screen.allWidgets) {
+        if (widget != this && widget instanceof AndroidSprite && widget.shouldBeAttached()) {
+          AndroidSprite other = (AndroidSprite) widget;
+          if (checkCollision((AndroidSprite) widget)) {
             result.add(other);
           }
         }
@@ -465,7 +671,7 @@ public class Sprite extends PositionedViewHolder<ImageView> {
   public float getRotation() {
     return rotation;
   }
-  
+
   public boolean setRotation(float rotation) {
     if (this.rotation != rotation) {
       this.rotation = rotation;
@@ -475,11 +681,11 @@ public class Sprite extends PositionedViewHolder<ImageView> {
   }
 
   public float getDx() {
-    return speed * clockwiseDegToDx(direction);
+    return speed * Sprite.clockwiseDegToDx(direction);
   }
 
   public float getDy() {
-    return speed * clockwiseDegToDy(direction);
+    return speed * Sprite.clockwiseDegToDy(direction);
   }
 
   boolean setDxy(float dx, float dy) {
@@ -489,8 +695,7 @@ public class Sprite extends PositionedViewHolder<ImageView> {
       return setSpeed(0);
     }
 
-
-    return setSpeed(newSpeed) | setDirection(dxDyToClockwiseDeg(dx, dy));
+    return setSpeed(newSpeed) | setDirection(Sprite.dxDyToClockwiseDeg(dx, dy));
   }
 
   public boolean setDx(float dx) {
@@ -501,6 +706,34 @@ public class Sprite extends PositionedViewHolder<ImageView> {
     return setDxy(getDx(), dy);
   }
 
+  public int getLineColor() {
+    return lineColor;
+  }
 
+  public float getLineWidth() {
+    return lineWidth;
+  }
 
+  public int getFillColor() {
+    return fillColor;
+  }
+
+  public float getCornerRadius() {
+    return cornerRadius;
+  }
+
+  public int getTextColor() {
+    return textColor;
+  }
+
+  public float getPadding() {
+    return padding;
+  }
+
+  enum SizeComponent {
+    NONE,
+    WIDTH,
+    HEIGHT,
+    SIZE
+  }
 }

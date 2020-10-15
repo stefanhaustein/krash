@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
-public class AndroidBitmapContent implements AndroidContent{
+public class AndroidBitmapContent implements AndroidDrawableContent {
 
   Bitmap bitmap;
   Screen screen;
@@ -21,5 +21,15 @@ public class AndroidBitmapContent implements AndroidContent{
     bitmapDrawable.setFilterBitmap(false);
     // bitmapDrawable.setAntiAlias(false);
     return bitmapDrawable;
+  }
+
+  @Override
+  public float getIntrinsicWidth() {
+    return bitmap.getWidth();
+  }
+
+  @Override
+  public float getIntrinsicHeight() {
+    return bitmap.getHeight();
   }
 }

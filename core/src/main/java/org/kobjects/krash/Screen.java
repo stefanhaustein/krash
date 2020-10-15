@@ -45,14 +45,14 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   float bitmapScale;
   final Object lock = new Object();
 
-  public float scale;
+  public float scale = 1;
   public Dpad dpad;
 
 
   /**
    * Contains all positioned view holders including children.
    */
-  Set<PositionedViewHolder<?>> allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
+  Set<Sprite<?>> allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
 
 
   public Screen(AppCompatActivity activity) {
@@ -70,7 +70,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
           scale = Math.min(scaleX, scaleY);
           dpad.requestSync();
           synchronized (lock) {
-            for (PositionedViewHolder<?> widget : allWidgets) {
+            for (Sprite<?> widget : allWidgets) {
               widget.requestSync(true);
             }
           }
@@ -191,7 +191,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   public void clearAll() {
     synchronized (lock) {
       cls();
-      for (PositionedViewHolder<?> widget : allWidgets) {
+      for (Sprite<?> widget : allWidgets) {
         widget.setVisible(false);
       }
       allWidgets.clear();
@@ -207,8 +207,8 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
     dpad.setVisible(false);
   }
 
-  public Sprite createSprite() {
-    return new Sprite(this);
+  public AndroidSprite createSprite() {
+    return new AndroidSprite(this);
   }
 
   @Override
@@ -258,13 +258,13 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
   private void animate(float dt) {
-    ArrayList<PositionedViewHolder<?>> copy = new ArrayList<>(allWidgets.size());
+    ArrayList<Sprite<?>> copy = new ArrayList<>(allWidgets.size());
     synchronized (lock) {
       copy.addAll(allWidgets);
     }
-    for (PositionedViewHolder<?> widget : copy) {
-      if (widget instanceof Sprite) {
-        ((Sprite) widget).animate(dt);
+    for (Sprite<?> widget : copy) {
+      if (widget instanceof AndroidSprite) {
+        ((AndroidSprite) widget).animate(dt);
       }
     }
   }

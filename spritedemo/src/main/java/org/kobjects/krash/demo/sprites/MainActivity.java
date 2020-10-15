@@ -11,7 +11,7 @@ import com.vanniktech.emoji.twitter.TwitterEmojiProvider;
 import org.kobjects.krash.EdgeMode;
 import org.kobjects.krash.Pen;
 import org.kobjects.krash.Screen;
-import org.kobjects.krash.Sprite;
+import org.kobjects.krash.AndroidSprite;
 
 public class MainActivity extends AppCompatActivity {
   @Override
@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     pen.drawRect(-15, -15, 30, 30);
 
 
-    Sprite ball = screen.createSprite();
+    AndroidSprite ball = screen.createSprite();
     ball.setFace("⚽");
     ball.setSize(30);
     ball.setSpeed(20);
@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
     ball.setRotation(-90);
     ball.say("Bounce");
 
-    Sprite ghost = screen.createSprite();
+    AndroidSprite ghost = screen.createSprite();
     ghost.setFace("\uD83D\uDC7B");
     ghost.setOpacity(0.8f);
     ghost.setSpeed(10);
@@ -50,5 +50,6 @@ public class MainActivity extends AppCompatActivity {
     ghost.setEdgeMode(EdgeMode.WRAP);
     ghost.say("Wrap");
 
+    // ghost.setText("Hello World");
   }
 }
