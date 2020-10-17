@@ -15,8 +15,16 @@ import java.util.Collections;
 import java.util.EnumSet;
 
 public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>> {
+  protected final Object lock = new Object();
+
   public static final double MIN_OPACITY = 0.0001;
   public static final String DEFAULT_FACE = "\ud83d\ude03";
+
+  public static final int POSITION_CHANGED = 1;
+  public static final int SIZE_CHANGED = 2;
+  public static final int CONTENT_CHANGED = 4;
+  public static final int HIERARCHY_CHANGED = 8;
+  public static final int STYLE_CHANGED = 16;
 
   protected float x;
   protected float y;
@@ -53,7 +61,8 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   private float cornerRadius;
   private float padding;
   private EdgeMode edgeMode = EdgeMode.NONE;
-  protected boolean contentDirty = true;
+  private int changedProperties;
+
 
   Sprite(Screen screen, T view) {
     super(new AnchorLayout<>(view));
@@ -67,44 +76,52 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
 
 
 
-  public abstract void syncUi();
+  public abstract void syncUi(int changedProperties);
 
 
-  void requestSync(boolean hard) {
-    if (!syncRequested) {
-      syncRequested = true;
+  void requestSync(int newChangedProperties) {
+    synchronized (lock) {
+      this.changedProperties |= newChangedProperties;
+      if (!syncRequested) {
+        syncRequested = true;
         screen.activity.runOnUiThread(() -> {
-          syncRequested = false;
-          view.setVisibility(visible ? View.VISIBLE : View.GONE);
-          view.wrapped.setAlpha(opacity);
-          // visible is used internally to handle bubble visibility and to remove everything on clear, so it
-          // gets special treatment here.
-          boolean shouldBeAttached = visible && shouldBeAttached();
-          ViewGroup expectedParent = shouldBeAttached ? anchor.view : null;
-          if (view.getParent() != expectedParent) {
-            if (view.getParent() != null) {
-              ((ViewGroup) view.getParent()).removeView(view);
+          synchronized (lock) {
+            syncRequested = false;
+            int changedProperties = Sprite.this.changedProperties;
+            Sprite.this.changedProperties = 0;
+            view.setVisibility(visible ? View.VISIBLE : View.GONE);
+            view.wrapped.setAlpha(opacity);
+            // visible is used internally to handle bubble visibility and to remove everything on clear, so it
+            // gets special treatment here.
+            boolean shouldBeAttached = visible && shouldBeAttached();
+            ViewGroup expectedParent = shouldBeAttached ? anchor.view : null;
+            if (view.getParent() != expectedParent) {
+              if (view.getParent() != null) {
+                ((ViewGroup) view.getParent()).removeView(view);
+              }
+              if (expectedParent == null) {
+                return;
+              }
+              expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             }
-            if (expectedParent == null) {
-              return;
-            }
-            expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-          }
-          syncUi();
+            syncUi(changedProperties);
 
-          view.setTranslationX(getRelativeX() * screen.scale);
-          view.setTranslationY(getRelativeY() * screen.scale);
+            view.setTranslationX(getRelativeX() * screen.scale);
+            view.setTranslationY(getRelativeY() * screen.scale);
 
-          view.setTranslationZ(z);
+            view.setTranslationZ(z);
 
-          if (changeListeners != null) {
-            synchronized (changeListeners) {
-              for (Runnable changeListener : changeListeners) {
-                changeListener.run();
+            if (changeListeners != null) {
+              synchronized (changeListeners) {
+                for (Runnable changeListener : changeListeners) {
+                  changeListener.run();
+                }
               }
             }
+            this.changedProperties = 0;
           }
         });
+      }
     }
   }
 
@@ -237,7 +254,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.x = x;
-    requestSync(false);
+    requestSync(POSITION_CHANGED);
     return true;
   }
 
@@ -246,7 +263,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.y = y;
-    requestSync(false);
+    requestSync(POSITION_CHANGED);
     return true;
   }
 
@@ -257,7 +274,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.opacity = opacity;
-    requestSync(false);
+    requestSync(CONTENT_CHANGED);
     return true;
   }
 
@@ -266,7 +283,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.anchor = anchor;
-    requestSync(false);
+    requestSync(HIERARCHY_CHANGED);
     return true;
   }
 
@@ -275,7 +292,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.z = z;
-    requestSync(false);
+    requestSync(POSITION_CHANGED);
 
     return true;
   }
@@ -289,7 +306,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     visible = value;
-    requestSync(/*false*/ true);
+    requestSync(/*false*/ CONTENT_CHANGED);
     return true;
   }
 
@@ -306,7 +323,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     xAlign = newValue;
-    requestSync(false);
+    requestSync(POSITION_CHANGED);
     return true;
   }
 
@@ -316,7 +333,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     yAlign = newValue;
-    requestSync(false);
+    requestSync(POSITION_CHANGED);
     return true;
   }
 
@@ -423,7 +440,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.fillColor = fillColor;
-    requestSync(false);
+    requestSync(STYLE_CHANGED);
     return true;
   }
 
@@ -432,7 +449,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.lineColor = lineColor;
-    requestSync(false);
+    requestSync(STYLE_CHANGED);
     return true;
   }
 
@@ -441,7 +458,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.textColor = textColor;
-    requestSync(false);
+    requestSync(STYLE_CHANGED);
     return true;
   }
 
@@ -450,7 +467,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.lineWidth = lineWidth;
-    requestSync(false);
+    requestSync(STYLE_CHANGED);
     return true;
   }
 
@@ -459,7 +476,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.cornerRadius = cornerRadius;
-    requestSync(false);
+    requestSync(STYLE_CHANGED);
     return true;
   }
 
@@ -468,7 +485,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.padding = padding;
-    requestSync(true);
+    requestSync(STYLE_CHANGED);
     return true;
   }
 
@@ -477,7 +494,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       return false;
     }
     this.angle = angle;
-    requestSync(false);
+    requestSync(POSITION_CHANGED);
     return true;
   }
 
@@ -494,14 +511,14 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   public void say(String text) {
     getBubble().setText(text);
     getBubble().setVisible(!text.isEmpty());
-    getBubble().requestSync(true);
+    getBubble().requestSync(HIERARCHY_CHANGED);
   }
 
   public void animate(float dt) {
-    boolean propertiesChanged = false;
+    int propertiesChanged = 0;
 
     if (speed != 0.0) {
-      propertiesChanged = true;
+      propertiesChanged = POSITION_CHANGED;
       double theta = Math.toRadians(90 - direction);
       double delta = dt * speed / 1000;
       double dx = Math.cos(theta) * delta;
@@ -540,24 +557,24 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
       }
     }
     if (rotation != 0F) {
-      propertiesChanged = true;
+      propertiesChanged = POSITION_CHANGED;
       angle += rotation * dt / 1000F;
     }
     if (grow != 0F) {
-      propertiesChanged = true;
+      propertiesChanged = SIZE_CHANGED;
       setSize(getSize() + grow * dt / 1000F);
     }
     if (fade != 0F) {
-      propertiesChanged = true;
+      propertiesChanged = STYLE_CHANGED;
       opacity += fade * dt / 1000F;
     }
 
-    if (propertiesChanged) {
-      requestSync(false);
+    if (propertiesChanged != 0) {
+      requestSync(propertiesChanged);
     }
 
     if (tag instanceof Animated) {
-      ((Animated) tag).animate(dt, propertiesChanged);
+      ((Animated) tag).animate(dt, propertiesChanged != 0);
     }
 /*
     if (collisions().size() > 0) {

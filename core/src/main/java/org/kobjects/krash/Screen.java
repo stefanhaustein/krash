@@ -71,7 +71,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
           dpad.requestSync();
           synchronized (lock) {
             for (Sprite<?> widget : allWidgets) {
-              widget.requestSync(true);
+              widget.requestSync(Sprite.SIZE_CHANGED);
             }
           }
       }

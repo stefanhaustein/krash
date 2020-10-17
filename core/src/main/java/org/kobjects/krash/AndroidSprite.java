@@ -24,12 +24,7 @@ public class AndroidSprite extends Sprite<View> {
   private static Canvas testCanvas;
   private static Bitmap testBitmap;
   private BubbleDrawable bubbleDrawable;
-
-
   private AndroidContent content;
-
-
-  private boolean sizeDirty = true;
 
   AndroidSprite(Screen screen) {
     super(screen, new AppCompatImageView(screen.activity));
@@ -49,15 +44,6 @@ public class AndroidSprite extends Sprite<View> {
           && y - size / 2 < screen.getLogicalViewportWidth() && y + size / 2 > -screen.getLogicalViewportWidth();
     }
     return super.shouldBeAttached();
-  }
-
-
-  @Override
-  void requestSync(boolean hard) {
-    super.requestSync(hard);
-    if (hard) {
-      sizeDirty = true;
-    }
   }
 
   @Override
@@ -104,51 +90,53 @@ public class AndroidSprite extends Sprite<View> {
 
 
   public boolean setContent(Content content) {
-    if (Objects.equals(content, this.content)) {
-      return false;
-    }
+    synchronized (lock) {
+      if (Objects.equals(content, this.content)) {
+        return false;
+      }
 
-    contentDirty = true;
-    this.content = (AndroidContent) content;
-    adjustSize(SizeComponent.NONE);
-    requestSync(true);
-    return true;
+      this.content = (AndroidContent) content;
+      requestSync(CONTENT_CHANGED);
+
+      // Order is important here currently, as a size change without content change notification
+      // will error
+      adjustSize(SizeComponent.NONE);
+      return true;
+    }
   }
 
   @Override
-  public void syncUi() {
+  public void syncUi(int changedProperties) {
+    synchronized (lock) {
 
-    if (contentDirty) {
-      contentDirty = false;
-      if (content instanceof AndroidDrawableContent) {
-        ImageView imageView = new ImageView(screen.activity);
-        Drawable drawable = ((AndroidDrawableContent) content).getDrawable();
-        imageView.setLayerType(drawable instanceof SvgDrawable ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_HARDWARE, null);
+      if ((changedProperties & CONTENT_CHANGED) != 0) {
+        if (content instanceof AndroidDrawableContent) {
+          ImageView imageView = new ImageView(screen.activity);
+          Drawable drawable = ((AndroidDrawableContent) content).getDrawable();
+          imageView.setLayerType(drawable instanceof SvgDrawable ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_HARDWARE, null);
 
-        fillDistanceArray(drawable);
-        imageView.setImageDrawable(drawable);
+          fillDistanceArray(drawable);
+          imageView.setImageDrawable(drawable);
 
-        imageView.setAdjustViewBounds(true);
-        imageView.setScaleType(ImageView.ScaleType.FIT_XY);
+          imageView.setAdjustViewBounds(true);
+          imageView.setScaleType(ImageView.ScaleType.FIT_XY);
 
-        view.setWrapped(imageView);
-      } else if (content instanceof AndroidViewContent) {
-        view.setWrapped(((AndroidViewContent) content).getView());
-        adjustSize(SizeComponent.SIZE);
-      } else {
-        throw new IllegalStateException();
+          view.setWrapped(imageView);
+        } else if (content instanceof AndroidViewContent) {
+          view.setWrapped(((AndroidViewContent) content).getView());
+          adjustSize(SizeComponent.SIZE);
+        } else {
+          throw new IllegalStateException();
+        }
+
+        content.sync(this);
       }
 
-      content.sync(this);
-    }
+      if ((changedProperties & SIZE_CHANGED) != 0) {
+        content.sync(this);
 
-    if (sizeDirty) {
-      sizeDirty = false;
-
-      content.sync(this);
-
-      int pixelWidth = Math.round(screen.scale * width);
-      int pixelHeight = Math.round(screen.scale * height);
+        int pixelWidth = Math.round(screen.scale * width);
+        int pixelHeight = Math.round(screen.scale * height);
 
    /*   if (face != null && !face.isEmpty()) {
         synchronized (svgCache) {
@@ -161,55 +149,53 @@ public class AndroidSprite extends Sprite<View> {
       }*/
 
 
-      if (getCornerRadius() == 0 && (getLineColor() == 0 || getLineWidth() == 0)) {
-        if (bubbleDrawable != null) {
-          view.wrapped.setBackground(null);
-          //     view.wrapped.setClipToOutline(true);
-          bubbleDrawable = null;
-        }
-        view.wrapped.setBackgroundColor(getFillColor());
-      } else {
-        if (bubbleDrawable == null) {
-          bubbleDrawable = new BubbleDrawable();
-          view.wrapped.setBackground(bubbleDrawable);
-          view.wrapped.setClipToOutline(false);
-          //      view.setClipChildren(false);
-        }
-        bubbleDrawable.cornerBox = getCornerRadius() * 2 * screen.scale;
-        bubbleDrawable.strokePaint.setColor(getLineColor());
-        bubbleDrawable.strokePaint.setStrokeWidth(getLineWidth() * screen.scale);
-        bubbleDrawable.backgroundPaint.setColor(getFillColor());
-
-        if (yAlign == YAlign.BOTTOM && anchor != screen && getY() > 0) {
-          bubbleDrawable.arrowDy = screen.scale * y;
-          bubbleDrawable.arrowDx = screen.scale * -x / 2;
+        if (getCornerRadius() == 0 && (getLineColor() == 0 || getLineWidth() == 0)) {
+          if (bubbleDrawable != null) {
+            view.wrapped.setBackground(null);
+            //     view.wrapped.setClipToOutline(true);
+            bubbleDrawable = null;
+          }
+          view.wrapped.setBackgroundColor(getFillColor());
         } else {
-          bubbleDrawable.arrowDy = 0;
-          bubbleDrawable.arrowDx = 0;
-        }
-        bubbleDrawable.invalidateSelf();
+          if (bubbleDrawable == null) {
+            bubbleDrawable = new BubbleDrawable();
+            view.wrapped.setBackground(bubbleDrawable);
+            view.wrapped.setClipToOutline(false);
+            //      view.setClipChildren(false);
+          }
+          bubbleDrawable.cornerBox = getCornerRadius() * 2 * screen.scale;
+          bubbleDrawable.strokePaint.setColor(getLineColor());
+          bubbleDrawable.strokePaint.setStrokeWidth(getLineWidth() * screen.scale);
+          bubbleDrawable.backgroundPaint.setColor(getFillColor());
+
+          if (yAlign == YAlign.BOTTOM && anchor != screen && getY() > 0) {
+            bubbleDrawable.arrowDy = screen.scale * y;
+            bubbleDrawable.arrowDx = screen.scale * -x / 2;
+          } else {
+            bubbleDrawable.arrowDy = 0;
+            bubbleDrawable.arrowDx = 0;
+          }
+          bubbleDrawable.invalidateSelf();
 //            view.wrapped.invalidate();
+        }
+
+
+        // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
+        view.wrapped.setLayoutParams(new FrameLayout.LayoutParams(pixelWidth, pixelHeight));
+        view.wrapped.requestLayout();
+        view.requestLayout();
+
+
       }
-
-
-          // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
-      view.wrapped.setLayoutParams(new FrameLayout.LayoutParams(pixelWidth, pixelHeight));
-      view.wrapped.requestLayout();
-      view.requestLayout();
-
-
-
-
+      view.wrapped.setRotation(getAngle());
     }
-    view.wrapped.setRotation(getAngle());
   }
 
   @Override
   protected void adjustSize(SizeComponent sizeComponent) {
     manualSizeComponents.add(sizeComponent);
     content.adjustSize(this, sizeComponent);
-    sizeDirty = true;
-    requestSync(true);
+    requestSync(SIZE_CHANGED);
   }
 
 
