@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.view.View;
 import android.widget.FrameLayout;

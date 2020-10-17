@@ -8,10 +8,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.vanniktech.emoji.EmojiManager;
 import com.vanniktech.emoji.twitter.TwitterEmojiProvider;
 
-import org.kobjects.krash.EdgeMode;
-import org.kobjects.krash.Pen;
-import org.kobjects.krash.Screen;
-import org.kobjects.krash.AndroidSprite;
+import org.kobjects.krash.api.EdgeMode;
+import org.kobjects.krash.android.Pen;
+import org.kobjects.krash.android.AndroidScreen;
+import org.kobjects.krash.android.AndroidSprite;
 
 public class MainActivity extends AppCompatActivity {
   @Override
@@ -20,11 +20,11 @@ public class MainActivity extends AppCompatActivity {
 
     EmojiManager.install(new TwitterEmojiProvider());
 
-    Screen screen = new Screen(this);
+    AndroidScreen screen = new AndroidScreen(this);
   //  screen.setViewport(320, 200, true);
 
-    screen.view.setBackgroundColor(Color.DKGRAY);
-    setContentView(screen.view);
+    screen.getView().setBackgroundColor(Color.DKGRAY);
+    setContentView(screen.getView());
 
     // Size comparison
     Pen pen = screen.createPen();

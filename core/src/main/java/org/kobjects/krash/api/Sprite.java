@@ -1,20 +1,21 @@
-package org.kobjects.krash;
-
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-
-import org.kobjects.krash.api.Content;
-import org.kobjects.krash.api.EmojiContent;
+package org.kobjects.krash.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Set;
 
-public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>> {
+public abstract class Sprite implements Anchor {
+
+  public enum SizeComponent {
+    NONE,
+    WIDTH,
+    HEIGHT,
+    SIZE
+  }
+
+
   protected final Object lock = new Object();
 
   public static final double MIN_OPACITY = 0.0001;
@@ -36,19 +37,19 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   // For internal use!
   protected boolean visible = true;
 
-  final Screen screen;
+  protected final Screen screen;
   protected float[] distances = new float[64];
-  boolean syncRequested;
+  protected boolean syncRequested;
 
-  ViewHolder<?> anchor;
-  AndroidSprite label;
-  AndroidSprite bubble;
+  protected Anchor anchor;
+  Sprite label;
+  Sprite bubble;
   float size;
-  float width;
-  float height;
-  int textColor = Color.BLACK;
-  EnumSet<SizeComponent> manualSizeComponents = EnumSet.noneOf(SizeComponent.class);
-  private ArrayList<Runnable> changeListeners;
+  private float width;
+  private float height;
+  int textColor = 0xff000000;
+  protected EnumSet<SizeComponent> manualSizeComponents = EnumSet.noneOf(SizeComponent.class);
+  protected ArrayList<Runnable> changeListeners;
   private float angle;
   private float speed;
   private float direction;
@@ -61,76 +62,35 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   private float cornerRadius;
   private float padding;
   private EdgeMode edgeMode = EdgeMode.NONE;
-  private int changedProperties;
+  protected int changedProperties;
+  Object tag;
 
 
-  Sprite(Screen screen, T view) {
-    super(new AnchorLayout<>(view));
-    synchronized (screen.lock) {
-      screen.allWidgets.add(this);
-    }
+  protected Sprite(Screen screen) {
     this.screen = screen;
     this.anchor = screen;
-    view.setTag(this);
+  }
+
+
+  public void setTag(Object tag) {
+    this.tag = tag;
+  }
+
+  public Object getTag() {
+    return tag;
   }
 
 
 
-  public abstract void syncUi(int changedProperties);
+
+  abstract protected void requestSync(int newChangedProperties);
 
 
-  void requestSync(int newChangedProperties) {
-    synchronized (lock) {
-      this.changedProperties |= newChangedProperties;
-      if (!syncRequested) {
-        syncRequested = true;
-        screen.activity.runOnUiThread(() -> {
-          synchronized (lock) {
-            syncRequested = false;
-            int changedProperties = Sprite.this.changedProperties;
-            Sprite.this.changedProperties = 0;
-            view.setVisibility(visible ? View.VISIBLE : View.GONE);
-            view.wrapped.setAlpha(opacity);
-            // visible is used internally to handle bubble visibility and to remove everything on clear, so it
-            // gets special treatment here.
-            boolean shouldBeAttached = visible && shouldBeAttached();
-            ViewGroup expectedParent = shouldBeAttached ? anchor.view : null;
-            if (view.getParent() != expectedParent) {
-              if (view.getParent() != null) {
-                ((ViewGroup) view.getParent()).removeView(view);
-              }
-              if (expectedParent == null) {
-                return;
-              }
-              expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            }
-            syncUi(changedProperties);
-
-            view.setTranslationX(getRelativeX() * screen.scale);
-            view.setTranslationY(getRelativeY() * screen.scale);
-
-            view.setTranslationZ(z);
-
-            if (changeListeners != null) {
-              synchronized (changeListeners) {
-                for (Runnable changeListener : changeListeners) {
-                  changeListener.run();
-                }
-              }
-            }
-            this.changedProperties = 0;
-          }
-        });
-      }
-    }
-  }
-
-
-  static float clockwiseDegToDx(float deg) {
+  public static float clockwiseDegToDx(float deg) {
     return (float) Math.cos(Math.toRadians(90 - deg));
   }
 
-  static float clockwiseDegToDy(float deg) {
+  public static float clockwiseDegToDy(float deg) {
     return (float) Math.sin(Math.toRadians(90 - deg));
   }
 
@@ -145,28 +105,24 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   protected abstract Content getContent();
 
   public float getSize() {
-    return (width + height) / 2;
+    return size;
   }
 
   public float getAngle() {
     return angle;
   }
 
-  boolean shouldBeAttached() {
+  protected boolean shouldBeAttached() {
     return opacity > MIN_OPACITY;
   }
 
 
-  public ViewHolder<?> getAnchor() {
+  public Anchor getAnchor() {
     return anchor;
   }
 
   public Screen getScreen() {
     return screen;
-  }
-
-  public T getWrapped() {
-    return view.wrapped;
   }
 
   public float getRelativeX() {
@@ -215,7 +171,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
 
   public float getScreenCX() {
     float result = getRelativeX() + getWidth() / 2;
-    ViewHolder current = anchor;
+    Anchor current = anchor;
     while (current instanceof Sprite) {
       result += ((Sprite) current).getRelativeX();
       current = ((Sprite) current).anchor;
@@ -225,7 +181,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
 
   public float getScreenCY() {
     float result = getRelativeY() + getHeight() / 2;
-    ViewHolder current = anchor;
+    Anchor current = anchor;
     while (current instanceof Sprite) {
       result += ((Sprite) current).getRelativeY();
       current = ((Sprite) current).anchor;
@@ -278,7 +234,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
     return true;
   }
 
-  public boolean setAnchor(ViewHolder<?> anchor) {
+  public boolean setAnchor(Anchor anchor) {
     if (this.anchor == anchor) {
       return false;
     }
@@ -339,7 +295,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
 
 
   public void addChangeListener(Runnable changeListener) {
-    synchronized (screen.lock) {
+    synchronized (screen.getLock()) {
       if (changeListeners == null) {
         changeListeners = new ArrayList<>();
       }
@@ -350,7 +306,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   }
 
   public void setText(String text) {
-    setContent(new AndrodTextContent(screen, text));
+    setContent(screen.createTextContent(text));
   }
 
   public abstract boolean setContent(Content content);
@@ -372,9 +328,9 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
     adjustSize(SizeComponent.HEIGHT);
   }
 
-  public AndroidSprite getLabel() {
+  public Sprite getLabel() {
     if (label == null) {
-      label = new AndroidSprite(screen);
+      label = screen.createSprite();
       label.setAnchor(this);
       label.setTextColor(0xff000000);
       label.setFillColor(0xffffffff);
@@ -385,18 +341,18 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
     return label;
   }
 
-  public boolean setLabel(AndroidSprite label) {
+  public boolean setLabel(Sprite label) {
     if (label == this.label) {
       return false;
     }
     this.label = label;
-    label.anchor = this;
+    label.setAnchor(this);
     return true;
   }
 
-  public AndroidSprite getBubble() {
+  public Sprite getBubble() {
     if (bubble == null) {
-      bubble = new AndroidSprite(screen);
+      bubble = screen.createSprite();
       bubble.setAnchor(this);
       bubble.setPadding(3);
       bubble.setTextColor(0xff000000);
@@ -409,16 +365,12 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
     return bubble;
   }
 
-  public void setBitmap(Bitmap bitmap) {
-    setContent(new AndroidBitmapContent(screen, bitmap));
-  }
-
-  public boolean setBubble(AndroidSprite bubble) {
+  public boolean setBubble(Sprite bubble) {
     if (bubble == this.bubble) {
       return false;
     }
     this.bubble = bubble;
-    bubble.anchor = this;
+    bubble.setAnchor(this);
     return true;
   }
 
@@ -431,7 +383,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   }
 
   public boolean setFace(String face) {
-    return setContent(new AndroidEmojiContent(screen, face));
+    return setContent(screen.createEmoji(face));
   }
 
 
@@ -511,7 +463,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   public void say(String text) {
     getBubble().setText(text);
     getBubble().setVisible(!text.isEmpty());
-    getBubble().requestSync(HIERARCHY_CHANGED);
+    // getBubble().requestSync(HIERARCHY_CHANGED);
   }
 
   public void animate(float dt) {
@@ -584,7 +536,7 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
     } */
   }
 
-  boolean checkCollision(AndroidSprite other) {
+  boolean checkCollision(Sprite other) {
     float sx = getScreenCX();
     float sy = getScreenCY();
     float distX = other.getScreenCX() - sx;
@@ -613,17 +565,16 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
   /**
    * Checks all sprites, as allWidgets is flattened.
    */
-  public Collection<AndroidSprite> collisions() {
+  public Collection<Sprite> collisions() {
     if (!shouldBeAttached()) {
       return Collections.emptyList();
     }
-    synchronized (screen.lock) {
-      ArrayList<AndroidSprite> result = new ArrayList<>();
+    synchronized (screen.getLock()) {
+      ArrayList<Sprite> result = new ArrayList<>();
       // StringBuilder debug = new StringBuilder();
-      for (Sprite<?> widget : screen.allWidgets) {
-        if (widget != this && widget instanceof AndroidSprite && widget.shouldBeAttached()) {
-          AndroidSprite other = (AndroidSprite) widget;
-          if (checkCollision((AndroidSprite) widget)) {
+      for (Sprite other : screen.allSprites()) {
+        if (other.shouldBeAttached()) {
+          if (checkCollision(other)) {
             result.add(other);
           }
         }
@@ -747,10 +698,24 @@ public abstract class Sprite<T extends View> extends ViewHolder<AnchorLayout<T>>
     return padding;
   }
 
-  enum SizeComponent {
-    NONE,
-    WIDTH,
-    HEIGHT,
-    SIZE
+  /**
+   * Adjusts the size without triggering anything
+   */
+  public void setAdjustedSize(float width, float height) {
+    setAdjustedSize(width, height, (width + height) / 2);
   }
+
+  /**
+   * Adjusts the size without triggering anything
+   */
+  public void setAdjustedSize(float width, float height, float size) {
+    this.width = width;
+    this.height = height;
+    this.size = size;
+  }
+
+  public Set<SizeComponent> getManualSizeComponents() {
+    return manualSizeComponents;
+  }
+
 }

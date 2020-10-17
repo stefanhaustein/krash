@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.content.Context;
 import android.view.Gravity;
@@ -6,6 +6,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+
+import org.kobjects.krash.R;
 
 /**
  * Handled separately from sprites because it scales differently
@@ -20,7 +22,7 @@ public class Dpad  {
     return layoutParams;
   }
 
-  private final Screen screen;
+  private final AndroidScreen screen;
   final LinearLayout view;
   private boolean syncRequested;
   private boolean visible;
@@ -32,7 +34,7 @@ public class Dpad  {
   public ImageView fire;
 
 
-  public Dpad(Screen screen) {
+  public Dpad(AndroidScreen screen) {
     this.screen = screen;
     Context context = screen.activity;
     this.view = new LinearLayout(context);

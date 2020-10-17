@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import org.kobjects.krash.api.Content;
 

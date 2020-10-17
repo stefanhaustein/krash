@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.graphics.Typeface;
 import android.text.Layout;
@@ -8,13 +8,15 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.TextView;
 
+import org.kobjects.krash.api.Sprite;
+
 public class AndrodTextContent implements AndroidViewContent {
-  private final Screen screen;
+  private final AndroidScreen screen;
   private String text;
   private TextPaint paint = new TextPaint();
   private StaticLayout.Builder staticLayoutBuilder;
 
-  public AndrodTextContent(Screen screen, String text) {
+  public AndrodTextContent(AndroidScreen screen, String text) {
     this.screen = screen;
     this.text = text;
   }
@@ -28,30 +30,34 @@ public class AndrodTextContent implements AndroidViewContent {
 
   @Override
   public void adjustSize(AndroidSprite sprite, AndroidSprite.SizeComponent sizeComponent) {
-    if (sizeComponent == Sprite.SizeComponent.NONE) {
-      sprite.size = 10;
-    }
-    if (!sprite.manualSizeComponents.contains(Sprite.SizeComponent.HEIGHT)) {
-      paint.setTextSize(sprite.size * screen.scale);
+    float size = sizeComponent == Sprite.SizeComponent.NONE ? 10 : sprite.getSize();
+
+    float width = sprite.getWidth();
+    float height = sprite.getHeight();
+
+    if (!sprite.getManualSizeComponents().contains(Sprite.SizeComponent.HEIGHT)) {
+      paint.setTextSize(size * screen.scale);
       paint.setTypeface(Typeface.DEFAULT);
 
-      if (!sprite.manualSizeComponents.contains(Sprite.SizeComponent.WIDTH)) {
-        sprite.width = Math.min((paint.measureText(text) + 2) / screen.scale, 70);
-        StaticLayout staticLayout = new StaticLayout(text, paint, (int) (sprite.width * screen.scale), Layout.Alignment.ALIGN_NORMAL, 1, 1, false);
-        sprite.height = staticLayout.getHeight() / screen.scale;
+      if (!sprite.getManualSizeComponents().contains(Sprite.SizeComponent.WIDTH)) {
+        width = Math.min((paint.measureText(text) + 2) / screen.scale, 70);
+        StaticLayout staticLayout = new StaticLayout(text, paint, (int) (width * screen.scale), Layout.Alignment.ALIGN_NORMAL, 1, 1, false);
+        height = staticLayout.getHeight() / screen.scale;
       }
     }
+
+    sprite.setAdjustedSize(width, height, size);
   }
 
   @Override
   public void sync(AndroidSprite sprite) {
     TextView textView = ((TextView) sprite.view.wrapped);
-    textView.setTextColor(sprite.textColor);
+    textView.setTextColor(sprite.getTextColor());
     textView.setPadding(0, 0, 0, 0);
     textView.setLineSpacing(0, 0);
     textView.setIncludeFontPadding(false);
 //    textView.setFirstBaselineToTopHeight(0);
     textView.setTypeface(Typeface.DEFAULT);
-    textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, sprite.size * screen.scale);
+    textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, sprite.getSize() * screen.scale);
   }
 }

@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.graphics.drawable.Drawable;
 
@@ -17,31 +17,27 @@ public interface AndroidDrawableContent extends AndroidContent {
   default void adjustSize(AndroidSprite sprite, AndroidSprite.SizeComponent sizeComponent) {
     switch (sizeComponent) {
       case NONE:
-        sprite.height = getIntrinsicHeight();
-        sprite.width = getIntrinsicWidth();
+        sprite.setAdjustedSize(getIntrinsicWidth(), getIntrinsicHeight());
         break;
       case SIZE: {
         float intrinsicWidth = getIntrinsicWidth();
         float intrinsicHeight = getIntrinsicHeight();
         float intrinsicSize = (intrinsicWidth + intrinsicHeight) / 2;
-        float scale = sprite.size / intrinsicSize;
+        float scale = sprite.getSize() / intrinsicSize;
 
-        sprite.width = intrinsicWidth * scale;
-        sprite.height = intrinsicHeight * scale;
-        return;
+        sprite.setAdjustedSize(intrinsicWidth * scale, intrinsicHeight * scale, sprite.getSize());
+        break;
       }
       case WIDTH: {
-        float scale = sprite.width / getIntrinsicWidth();
-        sprite.height = getIntrinsicHeight() * scale;
+        float scale = sprite.getWidth() / getIntrinsicWidth();
+        sprite.setAdjustedSize(sprite.getWidth(), getIntrinsicHeight() * scale);
         break;
       }
       case HEIGHT: {
-        float scale = sprite.height / getIntrinsicHeight();
-        sprite.height = getIntrinsicHeight() * scale;
+        float scale = sprite.getHeight() / getIntrinsicHeight();
+        sprite.setAdjustedSize(getIntrinsicWidth() * scale, sprite.getHeight());
         break;
       }
     }
-    sprite.size = (sprite.width + sprite.height) / 2;
-
   }
 }

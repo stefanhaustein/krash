@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.api;
 
 public enum EdgeMode {
   NONE, WRAP, BOUNCE

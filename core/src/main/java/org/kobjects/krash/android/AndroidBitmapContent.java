@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -7,9 +7,9 @@ import android.graphics.drawable.Drawable;
 public class AndroidBitmapContent implements AndroidDrawableContent {
 
   Bitmap bitmap;
-  Screen screen;
+  AndroidScreen screen;
 
-  AndroidBitmapContent(Screen screen, Bitmap bitmap) {
+  AndroidBitmapContent(AndroidScreen screen, Bitmap bitmap) {
     this.screen = screen;
     this.bitmap = bitmap;
   }
@@ -17,7 +17,7 @@ public class AndroidBitmapContent implements AndroidDrawableContent {
 
   @Override
   public Drawable getDrawable() {
-    BitmapDrawable bitmapDrawable = new BitmapDrawable(screen.view.getResources(), bitmap);
+    BitmapDrawable bitmapDrawable = new BitmapDrawable(screen.getView().getResources(), bitmap);
     bitmapDrawable.setFilterBitmap(false);
     // bitmapDrawable.setAntiAlias(false);
     return bitmapDrawable;

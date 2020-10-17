@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -9,36 +9,45 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ScaleDrawable;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.appcompat.widget.AppCompatImageView;
 
 import org.kobjects.krash.api.Content;
+import org.kobjects.krash.api.Sprite;
+import org.kobjects.krash.api.YAlign;
 
 import java.util.Objects;
 
 
-public class AndroidSprite extends Sprite<View> {
+public class AndroidSprite extends Sprite implements AndroidAnchor {
 
   private static Canvas testCanvas;
   private static Bitmap testBitmap;
   private BubbleDrawable bubbleDrawable;
   private AndroidContent content;
+  private AndroidScreen screen;
 
-  AndroidSprite(Screen screen) {
-    super(screen, new AppCompatImageView(screen.activity));
+  public AnchorLayout<View> view;
 
+  AndroidSprite(AndroidScreen screen) {
+    super(screen);
+    this.screen = screen;
+
+    view = new AnchorLayout<>(new AppCompatImageView(screen.activity));
+    view.setTag(this);
 
     setContent(new AndroidEmojiContent(screen, DEFAULT_FACE));
   }
 
   @Override
-  boolean shouldBeAttached() {
+  protected boolean shouldBeAttached() {
     // Top level sprites without children will get checked for physical removal
-    if (view.getChildCount() == 1 && anchor instanceof Screen) {
+    if (view.getChildCount() == 1 && getAnchor() instanceof AndroidScreen) {
       // width / height swap is intended here: ranges go up to the double of the opposite dimension
-      float size = Math.max(width, height);
+      float size = Math.max(getWidth(), getHeight());
       return opacity > MIN_OPACITY
           && x - size / 2 < screen.getLogicalViewportHeight() && x + size / 2 > -screen.getLogicalViewportHeight()
           && y - size / 2 < screen.getLogicalViewportWidth() && y + size / 2 > -screen.getLogicalViewportWidth();
@@ -88,6 +97,10 @@ public class AndroidSprite extends Sprite<View> {
     }
   }
 
+  public void setBitmap(Bitmap bitmap) {
+    setContent(new AndroidBitmapContent(screen, bitmap));
+  }
+
 
   public boolean setContent(Content content) {
     synchronized (lock) {
@@ -105,8 +118,7 @@ public class AndroidSprite extends Sprite<View> {
     }
   }
 
-  @Override
-  public void syncUi(int changedProperties) {
+  void syncUi(int changedProperties) {
     synchronized (lock) {
 
       if ((changedProperties & CONTENT_CHANGED) != 0) {
@@ -135,8 +147,8 @@ public class AndroidSprite extends Sprite<View> {
       if ((changedProperties & SIZE_CHANGED) != 0) {
         content.sync(this);
 
-        int pixelWidth = Math.round(screen.scale * width);
-        int pixelHeight = Math.round(screen.scale * height);
+        int pixelWidth = Math.round(screen.scale * getWidth());
+        int pixelHeight = Math.round(screen.scale * getHeight());
 
    /*   if (face != null && !face.isEmpty()) {
         synchronized (svgCache) {
@@ -199,4 +211,56 @@ public class AndroidSprite extends Sprite<View> {
   }
 
 
+  @Override
+  public void requestSync(int newChangedProperties) {
+    synchronized (lock) {
+      this.changedProperties |= newChangedProperties;
+      if (!syncRequested) {
+        syncRequested = true;
+        screen.activity.runOnUiThread(() -> {
+          synchronized (lock) {
+            syncRequested = false;
+            int changedProperties = AndroidSprite.this.changedProperties;
+            AndroidSprite.this.changedProperties = 0;
+            view.setVisibility(visible ? View.VISIBLE : View.GONE);
+            view.wrapped.setAlpha(opacity);
+            // visible is used internally to handle bubble visibility and to remove everything on clear, so it
+            // gets special treatment here.
+            boolean shouldBeAttached = visible && shouldBeAttached();
+            ViewGroup expectedParent = shouldBeAttached ? ((AndroidAnchor) anchor).getView() : null;
+            if (view.getParent() != expectedParent) {
+              if (view.getParent() != null) {
+                ((ViewGroup) view.getParent()).removeView(view);
+              }
+              if (expectedParent == null) {
+                return;
+              }
+              expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            }
+            syncUi(changedProperties);
+
+            view.setTranslationX(getRelativeX() * screen.scale);
+            view.setTranslationY(getRelativeY() * screen.scale);
+
+            view.setTranslationZ(z);
+
+            if (changeListeners != null) {
+              synchronized (changeListeners) {
+                for (Runnable changeListener : changeListeners) {
+                  changeListener.run();
+                }
+              }
+            }
+            this.changedProperties = 0;
+          }
+        });
+      }
+    }
+  }
+
+
+  @Override
+  public ViewGroup getView() {
+    return view;
+  }
 }

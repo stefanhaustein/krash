@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
@@ -18,6 +18,10 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
+import org.kobjects.krash.api.Content;
+import org.kobjects.krash.api.Screen;
+import org.kobjects.krash.api.Sprite;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
@@ -25,7 +29,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
 
-public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver {
+public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
 
   private final static boolean DEBUG = false;
 
@@ -47,16 +51,17 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
 
   public float scale = 1;
   public Dpad dpad;
+  private ViewGroup view;
 
 
   /**
    * Contains all positioned view holders including children.
    */
-  Set<Sprite<?>> allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
+  Set<AndroidSprite> allWidgets = Collections.newSetFromMap(new WeakHashMap<>());
 
 
-  public Screen(AppCompatActivity activity) {
-    super(new FrameLayout(activity));
+  public AndroidScreen(AppCompatActivity activity) {
+    view = new FrameLayout(activity);
     this.activity = activity;
     view.setClipChildren(false);
     activity.getLifecycle().addObserver(this);
@@ -70,7 +75,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
           scale = Math.min(scaleX, scaleY);
           dpad.requestSync();
           synchronized (lock) {
-            for (Sprite<?> widget : allWidgets) {
+            for (AndroidSprite widget : allWidgets) {
               widget.requestSync(Sprite.SIZE_CHANGED);
             }
           }
@@ -87,7 +92,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
       @Override
       protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        Bitmap bitmap = Screen.this.bitmap;
+        Bitmap bitmap = AndroidScreen.this.bitmap;
         if (bitmap != null) {
           float availableWidth = right - left;
           float availableHeight = bottom - top;
@@ -191,7 +196,7 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   public void clearAll() {
     synchronized (lock) {
       cls();
-      for (Sprite<?> widget : allWidgets) {
+      for (Sprite widget : allWidgets) {
         widget.setVisible(false);
       }
       allWidgets.clear();
@@ -208,7 +213,9 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
   public AndroidSprite createSprite() {
-    return new AndroidSprite(this);
+    AndroidSprite sprite = new AndroidSprite(this);
+    allWidgets.add(sprite);
+    return sprite;
   }
 
   @Override
@@ -258,14 +265,43 @@ public class Screen extends ViewHolder<FrameLayout> implements LifecycleObserver
   }
 
   private void animate(float dt) {
-    ArrayList<Sprite<?>> copy = new ArrayList<>(allWidgets.size());
+    ArrayList<Sprite> copy = new ArrayList<>(allWidgets.size());
     synchronized (lock) {
       copy.addAll(allWidgets);
     }
-    for (Sprite<?> widget : copy) {
+    for (Sprite widget : copy) {
       if (widget instanceof AndroidSprite) {
         ((AndroidSprite) widget).animate(dt);
       }
     }
+  }
+
+  @Override
+  public AndroidEmojiContent createEmoji(String codepoint) {
+    return new AndroidEmojiContent(this, codepoint);
+  }
+
+  @Override
+  public Object getLock() {
+    return null;
+  }
+
+  @Override
+  public Iterable<Sprite> allSprites() {
+    ArrayList<Sprite> copy = new ArrayList<>(allWidgets.size());
+    synchronized (lock) {
+      copy.addAll(allWidgets);
+    }
+    return copy;
+  }
+
+  @Override
+  public Content createTextContent(String text) {
+    return new AndrodTextContent(this, text);
+  }
+
+  @Override
+  public ViewGroup getView() {
+    return view;
   }
 }

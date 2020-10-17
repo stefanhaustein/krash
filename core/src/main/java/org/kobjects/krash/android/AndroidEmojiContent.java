@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.graphics.drawable.Drawable;
 
@@ -32,11 +32,11 @@ public class AndroidEmojiContent implements AndroidDrawableContent, EmojiContent
     }
   }
 
-  final Screen screen;
+  final AndroidScreen screen;
   final String codepoint;
 
 
-  AndroidEmojiContent(Screen screen, String codepoint) {
+  AndroidEmojiContent(AndroidScreen screen, String codepoint) {
     this.screen = screen;
     this.codepoint = codepoint;
     synchronized (svgCache) {
@@ -54,8 +54,8 @@ public class AndroidEmojiContent implements AndroidDrawableContent, EmojiContent
       if (svg != null && svg != ERROR_SVG) {
         return new SvgDrawable(svg);
       }
-      Drawable drawable = Emojis.getDrawable(screen.view.getContext(), codepoint);
-      return drawable != null ? drawable : Emojis.getDrawable(screen.view.getContext(), "\uD83D\uDEAB");
+      Drawable drawable = Emojis.getDrawable(screen.getView().getContext(), codepoint);
+      return drawable != null ? drawable : Emojis.getDrawable(screen.getView().getContext(), "\uD83D\uDEAB");
     }
   }
 

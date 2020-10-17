@@ -1,4 +1,4 @@
-package org.kobjects.krash;
+package org.kobjects.krash.android;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -8,7 +8,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 
 public class Pen {
-  private final Screen screen;
+  private final AndroidScreen screen;
   private Bitmap currentBitmap;
   private Canvas canvas;
   private final Paint linePaint = new Paint();
@@ -23,7 +23,7 @@ public class Pen {
     return -y * screen.bitmapScale + screen.getBitmap().getHeight() / 2;
   }
 
-  public Pen(Screen screen) {
+  public Pen(AndroidScreen screen) {
     this.screen = screen;
 
     linePaint.setAntiAlias(true);
@@ -42,7 +42,7 @@ public class Pen {
       currentBitmap = screen.getBitmap();
       canvas = new Canvas(currentBitmap);
     }
-    screen.view.postInvalidate();
+    screen.getView().postInvalidate();
   }
 
   public void drawLine(float x0, float y0, float x1, float y1) {
