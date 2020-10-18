@@ -306,7 +306,7 @@ public abstract class Sprite implements Anchor {
   }
 
   public void setText(String text) {
-    setContent(screen.createTextContent(text));
+    setContent(screen.createText(text));
   }
 
   public abstract boolean setContent(Content content);

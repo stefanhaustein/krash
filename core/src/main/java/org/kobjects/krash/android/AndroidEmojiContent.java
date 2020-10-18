@@ -12,7 +12,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AndroidEmojiContent implements AndroidDrawableContent, EmojiContent {
+public class AndroidEmojiContent extends AndroidDrawableContent implements EmojiContent {
 
   // TODO: add a static SVG that can be used to mark loading errors.
   static Map<String, SVG> svgCache = new HashMap<>();
@@ -32,13 +32,11 @@ public class AndroidEmojiContent implements AndroidDrawableContent, EmojiContent
     }
   }
 
-  final AndroidScreen screen;
   final String codepoint;
 
 
   AndroidEmojiContent(AndroidScreen screen, String codepoint) {
-    this.screen = screen;
-    this.codepoint = codepoint;
+    super(screen);    this.codepoint = codepoint;
     synchronized (svgCache) {
       if (svgCache.get(codepoint) == null) {
         requestSvg(codepoint);

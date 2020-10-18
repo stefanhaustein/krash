@@ -122,7 +122,7 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
     synchronized (lock) {
 
       if ((changedProperties & CONTENT_CHANGED) != 0) {
-        if (content instanceof AndroidDrawableContent) {
+      /*  if (content instanceof AndroidDrawableContent) {
           ImageView imageView = new ImageView(screen.activity);
           Drawable drawable = ((AndroidDrawableContent) content).getDrawable();
           imageView.setLayerType(drawable instanceof SvgDrawable ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_HARDWARE, null);
@@ -134,12 +134,12 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
           imageView.setScaleType(ImageView.ScaleType.FIT_XY);
 
           view.setWrapped(imageView);
-        } else if (content instanceof AndroidViewContent) {
-          view.setWrapped(((AndroidViewContent) content).getView());
-          adjustSize(SizeComponent.SIZE);
-        } else {
+        } else if (content instanceof AndroidViewContent) { */
+          view.setWrapped(content.getView());
+      //    adjustSize(SizeComponent.SIZE);
+/*        } else {
           throw new IllegalStateException();
-        }
+        }*/
 
         content.sync(this);
       }
@@ -149,16 +149,6 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
 
         int pixelWidth = Math.round(screen.scale * getWidth());
         int pixelHeight = Math.round(screen.scale * getHeight());
-
-   /*   if (face != null && !face.isEmpty()) {
-        synchronized (svgCache) {
-          SVG svg = svgCache.get(face);
-          if (svg != null) {
-            view.wrapped.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            view.wrapped.setImageDrawable(new PictureDrawable(svg.renderToPicture(pixelSize, pixelSize)));
-          }
-        }
-      }*/
 
 
         if (getCornerRadius() == 0 && (getLineColor() == 0 || getLineWidth() == 0)) {

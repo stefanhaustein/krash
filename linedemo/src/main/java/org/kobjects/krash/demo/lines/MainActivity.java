@@ -21,8 +21,8 @@ public class MainActivity extends AppCompatActivity {
     AndroidScreen screen = new AndroidScreen(this);
     // screen.setViewport(320, 200, true);
 
-    screen.view.setBackgroundColor(Color.DKGRAY);
-    setContentView(screen.view);
+    screen.getView().setBackgroundColor(Color.DKGRAY);
+    setContentView(screen.getView());
     final Pen pen = screen.createPen();
 
     new Thread(() -> {

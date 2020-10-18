@@ -12,6 +12,8 @@ import org.kobjects.krash.api.EdgeMode;
 import org.kobjects.krash.android.Pen;
 import org.kobjects.krash.android.AndroidScreen;
 import org.kobjects.krash.android.AndroidSprite;
+import org.kobjects.krash.api.GridContent;
+import org.kobjects.krash.api.Sprite;
 
 public class MainActivity extends AppCompatActivity {
   @Override
@@ -30,8 +32,19 @@ public class MainActivity extends AppCompatActivity {
     Pen pen = screen.createPen();
     pen.drawRect(-15, -15, 30, 30);
 
+    GridContent grid = screen.createGrid(8, 8);
+    for (int y = 0; y < 8; y++) {
+      for (int x = 0; x < 8; x++) {
+        grid.set(x, y, screen.createEmoji(((x+y) & 1) == 0 ? "⬛" : "⬜"));
+      }
+    }
 
-    AndroidSprite ball = screen.createSprite();
+    Sprite gridHolder = screen.createSprite();
+    gridHolder.setContent(grid);
+    gridHolder.setSize(200);
+    gridHolder.setRotation(1);
+
+    Sprite ball = screen.createSprite();
     ball.setFace("⚽");
     ball.setSize(30);
     ball.setSpeed(20);
@@ -40,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     ball.setRotation(-90);
     ball.say("Bounce");
 
-    AndroidSprite ghost = screen.createSprite();
+    Sprite ghost = screen.createSprite();
     ghost.setFace("\uD83D\uDC7B");
     ghost.setOpacity(0.8f);
     ghost.setSpeed(10);

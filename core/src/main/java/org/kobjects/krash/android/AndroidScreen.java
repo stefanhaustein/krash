@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
 import org.kobjects.krash.api.Content;
+import org.kobjects.krash.api.GridContent;
 import org.kobjects.krash.api.Screen;
 import org.kobjects.krash.api.Sprite;
 
@@ -296,8 +297,13 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   }
 
   @Override
-  public Content createTextContent(String text) {
+  public Content createText(String text) {
     return new AndrodTextContent(this, text);
+  }
+
+  @Override
+  public GridContent createGrid(int width, int height) {
+    return new AndroidGrid(this, width, height);
   }
 
   @Override

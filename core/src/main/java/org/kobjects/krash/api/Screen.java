@@ -10,5 +10,7 @@ public interface Screen extends Anchor {
 
   Iterable<Sprite> allSprites();
 
-  Content createTextContent(String text);
+  Content createText(String text);
+
+  GridContent createGrid(int width, int height);
 }

@@ -10,11 +10,10 @@ import android.widget.TextView;
 
 import org.kobjects.krash.api.Sprite;
 
-public class AndrodTextContent implements AndroidViewContent {
+public class AndrodTextContent implements AndroidContent {
   private final AndroidScreen screen;
   private String text;
   private TextPaint paint = new TextPaint();
-  private StaticLayout.Builder staticLayoutBuilder;
 
   public AndrodTextContent(AndroidScreen screen, String text) {
     this.screen = screen;

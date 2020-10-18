@@ -4,13 +4,12 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
-public class AndroidBitmapContent implements AndroidDrawableContent {
+public class AndroidBitmapContent extends AndroidDrawableContent {
 
   Bitmap bitmap;
-  AndroidScreen screen;
 
   AndroidBitmapContent(AndroidScreen screen, Bitmap bitmap) {
-    this.screen = screen;
+    super(screen);
     this.bitmap = bitmap;
   }
 
