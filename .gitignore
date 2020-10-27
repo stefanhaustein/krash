@@ -27,3 +27,9 @@ local.properties
 .settings/
 .classpath
 bin/
+
+
+# Other
+
+photon/
+

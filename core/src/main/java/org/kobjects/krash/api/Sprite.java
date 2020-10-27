@@ -102,7 +102,7 @@ public abstract class Sprite implements Anchor {
     return getContent() instanceof EmojiContent ? ((EmojiContent) getContent()).getCodepoint() : "";
   }
 
-  protected abstract Content getContent();
+  public abstract Content getContent();
 
   public float getSize() {
     return size;

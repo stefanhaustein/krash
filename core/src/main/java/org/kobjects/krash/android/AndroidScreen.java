@@ -229,6 +229,11 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
     return view.getHeight() / scale;
   }
 
+  @Override
+  public Object getTag() {
+    return view.getTag();
+  }
+
   public int getLogicalViewportHeight() {
     return logicalViewportHeight;
   }

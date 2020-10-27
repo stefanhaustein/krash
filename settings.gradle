@@ -1,3 +1,4 @@
+include ':photon'
 include ':android'
 include ':spritedemo', ':linedemo'
 include ':core'

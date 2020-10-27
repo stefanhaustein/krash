@@ -11,4 +11,6 @@ public interface Anchor {
    * Returns the normalized height of the view. For the screen, this value is negative.
    */
   float getHeight();
+
+  Object getTag();
 }

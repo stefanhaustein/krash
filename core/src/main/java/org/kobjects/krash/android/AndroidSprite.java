@@ -56,7 +56,7 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
   }
 
   @Override
-  protected Content getContent() {
+  public Content getContent() {
     return content;
   }
 
