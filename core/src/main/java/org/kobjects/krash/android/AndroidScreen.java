@@ -289,7 +289,7 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
 
   @Override
   public Object getLock() {
-    return null;
+    return lock;
   }
 
   @Override
