@@ -9,8 +9,9 @@ import android.view.View;
 import android.widget.TextView;
 
 import org.kobjects.krash.api.Sprite;
+import org.kobjects.krash.api.TextContent;
 
-public class AndrodTextContent implements AndroidContent {
+public class AndrodTextContent implements AndroidContent, TextContent {
   private final AndroidScreen screen;
   private String text;
   private TextPaint paint = new TextPaint();
@@ -58,5 +59,10 @@ public class AndrodTextContent implements AndroidContent {
 //    textView.setFirstBaselineToTopHeight(0);
     textView.setTypeface(Typeface.DEFAULT);
     textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, sprite.getSize() * screen.scale);
+  }
+
+  @Override
+  public String getText() {
+    return text;
   }
 }
