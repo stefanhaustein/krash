@@ -102,7 +102,7 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
   }
 
 
-  public boolean setContent(Content content) {
+  public boolean setContentImpl(Content content) {
     synchronized (lock) {
       if (Objects.equals(content, this.content)) {
         return false;

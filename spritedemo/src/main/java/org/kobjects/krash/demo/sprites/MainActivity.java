@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
     Sprite ball = screen.createSprite();
     ball.setFace("⚽");
-    ball.setSize(30);
+    ball.setSize(20);
     ball.setSpeed(20);
     ball.setDirection(20);
     ball.setEdgeMode(EdgeMode.BOUNCE);
@@ -63,6 +63,14 @@ public class MainActivity extends AppCompatActivity {
     ghost.setEdgeMode(EdgeMode.WRAP);
     ghost.say("Wrap");
 
+
+    new Thread(() -> {
+      try {
+        Thread.sleep(4000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      ghost.setSize(50);}).start();
     // ghost.setText("Hello World");
   }
 }

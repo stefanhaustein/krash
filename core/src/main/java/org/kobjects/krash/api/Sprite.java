@@ -309,7 +309,17 @@ public abstract class Sprite implements Anchor {
     setContent(screen.createText(text));
   }
 
-  public abstract boolean setContent(Content content);
+  public boolean setContent(Content content) {
+    if (content instanceof EmojiContent && getContent() instanceof EmojiContent && manualSizeComponents.contains(SizeComponent.SIZE)) {
+      float size = getSize();
+      boolean result = setContentImpl(content);
+      setSize(size);
+      return result;
+    }
+    return setContentImpl(content);
+  }
+
+  protected abstract boolean setContentImpl(Content content);
 
   public void setSize(float size) {
     this.size = size;
