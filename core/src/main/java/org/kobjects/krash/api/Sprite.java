@@ -65,10 +65,37 @@ public abstract class Sprite implements Anchor {
   protected int changedProperties;
   Object tag;
 
+  protected ArrayList<DragListener> dragListeners;
+
 
   protected Sprite(Screen screen) {
     this.screen = screen;
     this.anchor = screen;
+  }
+
+  public void addDragListener(DragListener dragListener) {
+    synchronized (lock) {
+      if (dragListeners == null) {
+        dragListeners = new ArrayList<>();
+        addDragListenerImpl();
+      }
+      dragListeners.add(dragListener);
+    }
+  }
+
+  protected abstract void addDragListenerImpl();
+
+  protected final boolean notifyDragged(DragListener.DragState state, float x, float y) {
+    synchronized (lock) {
+      if (dragListeners != null) {
+        for (DragListener dragListener : dragListeners) {
+          if (dragListener.drag(state, x, y)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
 

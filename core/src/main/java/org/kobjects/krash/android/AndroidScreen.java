@@ -214,9 +214,11 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   }
 
   public AndroidSprite createSprite() {
-    AndroidSprite sprite = new AndroidSprite(this);
-    allWidgets.add(sprite);
-    return sprite;
+    synchronized (lock) {
+      AndroidSprite sprite = new AndroidSprite(this);
+      allWidgets.add(sprite);
+      return sprite;
+    }
   }
 
   @Override
@@ -280,6 +282,18 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
         ((AndroidSprite) widget).animate(dt);
       }
     }
+  }
+
+  float rawXToScreen(float rawX) {
+    int[] loc = new int[2];
+    view.getLocationOnScreen(loc);
+    return ((rawX - loc[0]) - view.getWidth() / 2) / scale;
+  }
+
+  float rawYToScreen(float rawX) {
+    int[] loc = new int[2];
+    view.getLocationOnScreen(loc);
+    return (view.getHeight() / 2 - (rawX - loc[0])) / scale;
   }
 
   @Override

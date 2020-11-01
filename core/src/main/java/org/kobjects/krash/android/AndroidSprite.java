@@ -8,6 +8,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ScaleDrawable;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -16,6 +17,7 @@ import android.widget.ImageView;
 import androidx.appcompat.widget.AppCompatImageView;
 
 import org.kobjects.krash.api.Content;
+import org.kobjects.krash.api.DragListener;
 import org.kobjects.krash.api.Sprite;
 import org.kobjects.krash.api.YAlign;
 
@@ -58,6 +60,23 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
   @Override
   public Content getContent() {
     return content;
+  }
+
+  void fillDistanceArrayForRect() {
+    for (int i = 0; i < 64; i++) {
+      distances[i] = 0;
+      float deg = i * 360 / 64;
+      float dx = clockwiseDegToDx(deg);
+      float dy = clockwiseDegToDy(deg);
+      for (int distance = (int) Math.sqrt(2 * 32 * 32); distance > 0; distance -= 2) {
+        int x = 32 + (int) (dx * distance);
+        int y = 32 + (int) (dy * distance);
+        if (x >= 0 && y >= 0 && x < 64 && y < 64) {
+          distances[i] = distance/32f;
+          break;
+        }
+      }
+    }
   }
 
   void fillDistanceArray(Drawable drawable) {
@@ -142,6 +161,13 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
         }*/
 
         content.sync(this);
+
+        if (content instanceof AndroidDrawableContent) {
+          fillDistanceArray(((AndroidDrawableContent) content).getDrawable());
+        } else {
+          fillDistanceArrayForRect();
+        }
+
       }
 
       if ((changedProperties & SIZE_CHANGED) != 0) {
@@ -200,6 +226,28 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
     requestSync(SIZE_CHANGED);
   }
 
+
+  @Override
+  protected void addDragListenerImpl() {
+    view.wrapped.setOnTouchListener(new View.OnTouchListener() {
+      @Override
+      public boolean onTouch(View v, MotionEvent event) {
+        final float x = screen.rawXToScreen(event.getRawX());
+        final float y = screen.rawYToScreen(event.getRawY());
+        switch (event.getAction() & MotionEvent.ACTION_MASK) {
+          case MotionEvent.ACTION_DOWN:
+            return notifyDragged(DragListener.DragState.START, x, y);
+          case MotionEvent.ACTION_UP:
+            return notifyDragged(DragListener.DragState.END, x, y);
+          case MotionEvent.ACTION_MOVE:
+            return notifyDragged(DragListener.DragState.MOVE, x, y);
+          case MotionEvent.ACTION_CANCEL:
+            return notifyDragged(DragListener.DragState.CANCEL, x, y);
+        }
+        return false;
+      }
+    });
+  }
 
   @Override
   public void requestSync(int newChangedProperties) {
