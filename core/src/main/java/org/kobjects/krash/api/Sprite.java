@@ -12,7 +12,6 @@ public abstract class Sprite implements Anchor {
     NONE,
     WIDTH,
     HEIGHT,
-    SIZE
   }
 
 
@@ -44,7 +43,6 @@ public abstract class Sprite implements Anchor {
   protected Anchor anchor;
   Sprite label;
   Sprite bubble;
-  float size;
   private float width;
   private float height;
   int textColor = 0xff000000;
@@ -130,10 +128,6 @@ public abstract class Sprite implements Anchor {
   }
 
   public abstract Content getContent();
-
-  public float getSize() {
-    return size;
-  }
 
   public float getAngle() {
     return angle;
@@ -337,21 +331,16 @@ public abstract class Sprite implements Anchor {
   }
 
   public boolean setContent(Content content) {
-    if (content instanceof EmojiContent && getContent() instanceof EmojiContent && manualSizeComponents.contains(SizeComponent.SIZE)) {
-      float size = getSize();
+    if (content instanceof EmojiContent && getContent() instanceof EmojiContent && !manualSizeComponents.isEmpty()) {
+      float size = getHeight();
       boolean result = setContentImpl(content);
-      setSize(size);
+      setHeight(size);
       return result;
     }
     return setContentImpl(content);
   }
 
   protected abstract boolean setContentImpl(Content content);
-
-  public void setSize(float size) {
-    this.size = size;
-    adjustSize(SizeComponent.SIZE);
-  }
 
   protected abstract void adjustSize(SizeComponent sizeComponent);
 
@@ -516,7 +505,7 @@ public abstract class Sprite implements Anchor {
       y += dy;
 
        if (edgeMode != EdgeMode.NONE && anchor == screen) {
-        float radius = getSize() / 2;
+        float radius = (getWidth()+getHeight()) / 2 / 2;
         switch (edgeMode) {
           case WRAP:
             if (dx > 0 && x - radius > screen.getWidth() / 2) {
@@ -551,7 +540,7 @@ public abstract class Sprite implements Anchor {
     }
     if (grow != 0F) {
       propertiesChanged = SIZE_CHANGED;
-      setSize(getSize() + grow * dt / 1000F);
+      setWidth(getWidth() + grow * dt / 1000F);
     }
     if (fade != 0F) {
       propertiesChanged = STYLE_CHANGED;
@@ -588,11 +577,11 @@ public abstract class Sprite implements Anchor {
 
     float direction = Sprite.dxDyToClockwiseDeg(distX, distY) + angle;
     int directionIndex = ((int) (direction * 64 / 360)) & 63;
-    float radius = getSize() * distances[directionIndex] / 2;
+    float radius = Math.max(getWidth(), getHeight()) * distances[directionIndex] / 2;
 
     float otherDirection = Sprite.dxDyToClockwiseDeg(-distX, -distY) + other.getAngle();
     int otherDirectionIndex = ((int) (otherDirection * 64 / 360)) & 63;
-    float otherRadius = other.getSize() * other.distances[otherDirectionIndex] / 2;
+    float otherRadius = Math.max(other.getWidth(), other.getHeight()) * other.distances[otherDirectionIndex] / 2;
 
     minDist = radius + otherRadius;
 
@@ -739,16 +728,8 @@ public abstract class Sprite implements Anchor {
    * Adjusts the size without triggering anything
    */
   public void setAdjustedSize(float width, float height) {
-    setAdjustedSize(width, height, (width + height) / 2);
-  }
-
-  /**
-   * Adjusts the size without triggering anything
-   */
-  public void setAdjustedSize(float width, float height, float size) {
     this.width = width;
     this.height = height;
-    this.size = size;
   }
 
   public Set<SizeComponent> getManualSizeComponents() {

@@ -15,6 +15,7 @@ public class AndrodTextContent implements AndroidContent, TextContent {
   private final AndroidScreen screen;
   private String text;
   private TextPaint paint = new TextPaint();
+  private float textSize = 10;
 
   public AndrodTextContent(AndroidScreen screen, String text) {
     this.screen = screen;
@@ -30,13 +31,11 @@ public class AndrodTextContent implements AndroidContent, TextContent {
 
   @Override
   public void adjustSize(AndroidSprite sprite, AndroidSprite.SizeComponent sizeComponent) {
-    float size = sizeComponent == Sprite.SizeComponent.NONE ? 10 : sprite.getSize();
-
     float width = sprite.getWidth();
     float height = sprite.getHeight();
 
     if (!sprite.getManualSizeComponents().contains(Sprite.SizeComponent.HEIGHT)) {
-      paint.setTextSize(size * screen.scale);
+      paint.setTextSize(textSize * screen.scale);
       paint.setTypeface(Typeface.DEFAULT);
 
       if (!sprite.getManualSizeComponents().contains(Sprite.SizeComponent.WIDTH)) {
@@ -46,7 +45,7 @@ public class AndrodTextContent implements AndroidContent, TextContent {
       }
     }
 
-    sprite.setAdjustedSize(width, height, size);
+    sprite.setAdjustedSize(width, height);
   }
 
   @Override
@@ -58,7 +57,7 @@ public class AndrodTextContent implements AndroidContent, TextContent {
     textView.setIncludeFontPadding(false);
 //    textView.setFirstBaselineToTopHeight(0);
     textView.setTypeface(Typeface.DEFAULT);
-    textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, sprite.getSize() * screen.scale);
+    textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize * screen.scale);
   }
 
   @Override

@@ -13,4 +13,6 @@ public interface Screen extends Anchor {
   Content createText(String text);
 
   GridContent createGrid(int width, int height);
+
+  SvgContent createSvg(String svg);
 }

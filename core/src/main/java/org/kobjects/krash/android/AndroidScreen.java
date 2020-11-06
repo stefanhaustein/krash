@@ -22,6 +22,7 @@ import org.kobjects.krash.api.Content;
 import org.kobjects.krash.api.GridContent;
 import org.kobjects.krash.api.Screen;
 import org.kobjects.krash.api.Sprite;
+import org.kobjects.krash.api.SvgContent;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -323,6 +324,11 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   @Override
   public GridContent createGrid(int width, int height) {
     return new AndroidGrid(this, width, height);
+  }
+
+  @Override
+  public SvgContent createSvg(String svg) {
+    return new AndroidSvgContent(this, svg);
   }
 
   @Override

@@ -1,10 +1,12 @@
 buildscript {
+    ext.kotlin_version = '1.4.20-M1'
     ext {
         kotlin_version = '1.4.10'
     }
     repositories {
         jcenter()
         google()
+        maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
     }
 
     dependencies {

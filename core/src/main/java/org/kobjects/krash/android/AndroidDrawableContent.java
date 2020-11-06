@@ -41,16 +41,7 @@ abstract class AndroidDrawableContent implements AndroidContent {
       case NONE:
         sprite.setAdjustedSize(getIntrinsicWidth(), getIntrinsicHeight());
         break;
-      case SIZE: {
-        float intrinsicWidth = getIntrinsicWidth();
-        float intrinsicHeight = getIntrinsicHeight();
-        float intrinsicSize = (intrinsicWidth + intrinsicHeight) / 2;
-        float scale = sprite.getSize() / intrinsicSize;
-
-        sprite.setAdjustedSize(intrinsicWidth * scale, intrinsicHeight * scale, sprite.getSize());
-        break;
-      }
-      case WIDTH: {
+       case WIDTH: {
         float scale = sprite.getWidth() / getIntrinsicWidth();
         sprite.setAdjustedSize(sprite.getWidth(), getIntrinsicHeight() * scale);
         break;
