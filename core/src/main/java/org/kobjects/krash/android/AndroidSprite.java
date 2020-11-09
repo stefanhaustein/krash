@@ -12,7 +12,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 
 import androidx.appcompat.widget.AppCompatImageView;
 
@@ -154,59 +153,26 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
 
           view.setWrapped(imageView);
         } else if (content instanceof AndroidViewContent) { */
-          view.setWrapped(content.getView());
+          view.setWrapped(content.createView());
       //    adjustSize(SizeComponent.SIZE);
 /*        } else {
           throw new IllegalStateException();
         }*/
 
-        content.sync(this);
+        content.sync(view.wrapped);
 
         if (content instanceof AndroidDrawableContent) {
           fillDistanceArray(((AndroidDrawableContent) content).getDrawable());
         } else {
           fillDistanceArrayForRect();
         }
-
+      } else {
+        content.sync(view.wrapped);
       }
 
       if ((changedProperties & SIZE_CHANGED) != 0) {
-        content.sync(this);
-
         int pixelWidth = Math.round(screen.scale * getWidth());
         int pixelHeight = Math.round(screen.scale * getHeight());
-
-
-        if (getCornerRadius() == 0 && (getLineColor() == 0 || getLineWidth() == 0)) {
-          if (bubbleDrawable != null) {
-            view.wrapped.setBackground(null);
-            //     view.wrapped.setClipToOutline(true);
-            bubbleDrawable = null;
-          }
-          view.wrapped.setBackgroundColor(getFillColor());
-        } else {
-          if (bubbleDrawable == null) {
-            bubbleDrawable = new BubbleDrawable();
-            view.wrapped.setBackground(bubbleDrawable);
-            view.wrapped.setClipToOutline(false);
-            //      view.setClipChildren(false);
-          }
-          bubbleDrawable.cornerBox = getCornerRadius() * 2 * screen.scale;
-          bubbleDrawable.strokePaint.setColor(getLineColor());
-          bubbleDrawable.strokePaint.setStrokeWidth(getLineWidth() * screen.scale);
-          bubbleDrawable.backgroundPaint.setColor(getFillColor());
-
-          if (yAlign == YAlign.BOTTOM && anchor != screen && getY() > 0) {
-            bubbleDrawable.arrowDy = screen.scale * y;
-            bubbleDrawable.arrowDx = screen.scale * -x / 2;
-          } else {
-            bubbleDrawable.arrowDy = 0;
-            bubbleDrawable.arrowDx = 0;
-          }
-          bubbleDrawable.invalidateSelf();
-//            view.wrapped.invalidate();
-        }
-
 
         // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
         view.wrapped.setLayoutParams(new FrameLayout.LayoutParams(pixelWidth, pixelHeight));
@@ -222,7 +188,7 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
   @Override
   protected void adjustSize(SizeComponent sizeComponent) {
     manualSizeComponents.add(sizeComponent);
-    content.adjustSize(this, sizeComponent);
+    this.setAdjustedSize(content.adjustSize(getWidth(), getHeight(), sizeComponent));
     requestSync(SIZE_CHANGED);
   }
 
@@ -249,50 +215,51 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
     });
   }
 
+  void sync(float dt) {
+    synchronized (lock) {
+      animate(dt);
+
+      int changedProperties = this.changedProperties;
+     this.changedProperties = 0;
+      view.setVisibility(visible ? View.VISIBLE : View.GONE);
+      view.wrapped.setAlpha(opacity);
+      // visible is used internally to handle bubble visibility and to remove everything on clear, so it
+      // gets special treatment here.
+      boolean shouldBeAttached = visible && shouldBeAttached();
+      ViewGroup expectedParent = shouldBeAttached ? ((AndroidAnchor) anchor).getView() : null;
+      if (view.getParent() != expectedParent) {
+        if (view.getParent() != null) {
+          ((ViewGroup) view.getParent()).removeView(view);
+        }
+        if (expectedParent == null) {
+          return;
+        }
+        expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+      }
+      syncUi(changedProperties);
+
+      view.setTranslationX(getRelativeX() * screen.scale);
+      view.setTranslationY(getRelativeY() * screen.scale);
+
+      view.setTranslationZ(z);
+
+      if (changeListeners != null) {
+        synchronized (changeListeners) {
+          for (Runnable changeListener : changeListeners) {
+            changeListener.run();
+          }
+        }
+      }
+      this.changedProperties = 0;
+    }
+
+  }
+
+
   @Override
   public void requestSync(int newChangedProperties) {
     synchronized (lock) {
       this.changedProperties |= newChangedProperties;
-      if (!syncRequested) {
-        syncRequested = true;
-        screen.activity.runOnUiThread(() -> {
-          synchronized (lock) {
-            syncRequested = false;
-            int changedProperties = AndroidSprite.this.changedProperties;
-            AndroidSprite.this.changedProperties = 0;
-            view.setVisibility(visible ? View.VISIBLE : View.GONE);
-            view.wrapped.setAlpha(opacity);
-            // visible is used internally to handle bubble visibility and to remove everything on clear, so it
-            // gets special treatment here.
-            boolean shouldBeAttached = visible && shouldBeAttached();
-            ViewGroup expectedParent = shouldBeAttached ? ((AndroidAnchor) anchor).getView() : null;
-            if (view.getParent() != expectedParent) {
-              if (view.getParent() != null) {
-                ((ViewGroup) view.getParent()).removeView(view);
-              }
-              if (expectedParent == null) {
-                return;
-              }
-              expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            }
-            syncUi(changedProperties);
-
-            view.setTranslationX(getRelativeX() * screen.scale);
-            view.setTranslationY(getRelativeY() * screen.scale);
-
-            view.setTranslationZ(z);
-
-            if (changeListeners != null) {
-              synchronized (changeListeners) {
-                for (Runnable changeListener : changeListeners) {
-                  changeListener.run();
-                }
-              }
-            }
-            this.changedProperties = 0;
-          }
-        });
-      }
     }
   }
 

@@ -4,15 +4,17 @@ public interface Screen extends Anchor {
 
   Sprite createSprite();
 
-  EmojiContent createEmoji(String codepoint);
+  Emoji createEmoji(String codepoint);
 
   Object getLock();
 
   Iterable<Sprite> allSprites();
 
-  Content createText(String text);
+  Text createText(String text);
 
-  GridContent createGrid(int width, int height);
+  Tiles createGrid(int width, int height);
 
-  SvgContent createSvg(String svg);
+  Svg createSvg(String svg);
+
+  Bubble createBubble();
 }

@@ -5,11 +5,10 @@ import android.graphics.drawable.Drawable;
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
 
-import org.jetbrains.annotations.NotNull;
-import org.kobjects.krash.api.SvgContent;
+import org.kobjects.krash.api.Svg;
 
 
-public class AndroidSvgContent extends AndroidDrawableContent implements SvgContent {
+public class AndroidSvgContent extends AndroidDrawableContent implements Svg {
 
   private final SVG svg;
 

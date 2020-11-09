@@ -13,7 +13,7 @@ abstract class AndroidDrawableContent implements AndroidContent {
   }
 
 
-  public View getView() {
+  public View createView() {
     ImageView result = new ImageView(screen.activity);
     Drawable drawable = getDrawable();
     result.setLayerType(drawable instanceof SvgDrawable ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_HARDWARE, null);
@@ -36,21 +36,23 @@ abstract class AndroidDrawableContent implements AndroidContent {
     return getDrawable().getIntrinsicHeight();
   }
 
-  public void adjustSize(AndroidSprite sprite, AndroidSprite.SizeComponent sizeComponent) {
+  public float[] adjustSize(float width, float height, AndroidSprite.SizeComponent sizeComponent) {
     switch (sizeComponent) {
       case NONE:
-        sprite.setAdjustedSize(getIntrinsicWidth(), getIntrinsicHeight());
-        break;
-       case WIDTH: {
-        float scale = sprite.getWidth() / getIntrinsicWidth();
-        sprite.setAdjustedSize(sprite.getWidth(), getIntrinsicHeight() * scale);
-        break;
+        return new float[]{getIntrinsicWidth(), getIntrinsicHeight()};
+
+      case WIDTH: {
+        float scale = width / getIntrinsicWidth();
+        return new float[]{width, getIntrinsicHeight() * scale};
+
       }
       case HEIGHT: {
-        float scale = sprite.getHeight() / getIntrinsicHeight();
-        sprite.setAdjustedSize(getIntrinsicWidth() * scale, sprite.getHeight());
-        break;
+        float scale = height / getIntrinsicHeight();
+        return new float[]{getIntrinsicWidth() * scale, height};
+
       }
+      default:
+        throw new IllegalArgumentException();
     }
   }
 }

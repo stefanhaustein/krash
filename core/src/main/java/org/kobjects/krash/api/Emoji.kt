@@ -1,5 +1,5 @@
 package org.kobjects.krash.api
 
-interface EmojiContent : Content {
+interface Emoji : Content {
     val codepoint: String
 }

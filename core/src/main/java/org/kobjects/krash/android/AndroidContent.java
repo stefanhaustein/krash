@@ -5,9 +5,9 @@ import android.view.View;
 import org.kobjects.krash.api.Content;
 
 interface AndroidContent extends Content {
-  void adjustSize(AndroidSprite sprite, AndroidSprite.SizeComponent sizeComponent);
+  float[] adjustSize(float width, float height, AndroidSprite.SizeComponent sizeComponent);
 
-  View getView();
+  View createView();
 
-  default void sync(AndroidSprite sprite) {}
+  default void sync(View view) {}
 }

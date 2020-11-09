@@ -38,11 +38,9 @@ public abstract class Sprite implements Anchor {
 
   protected final Screen screen;
   protected float[] distances = new float[64];
-  protected boolean syncRequested;
 
   protected Anchor anchor;
-  Sprite label;
-  Sprite bubble;
+  Sprite bubbleSprite;
   private float width;
   private float height;
   int textColor = 0xff000000;
@@ -54,11 +52,6 @@ public abstract class Sprite implements Anchor {
   private float grow;
   private float fade;
   private float rotation;
-  private int fillColor;
-  private int lineColor;
-  private float lineWidth;
-  private float cornerRadius;
-  private float padding;
   private EdgeMode edgeMode = EdgeMode.NONE;
   protected int changedProperties;
   Object tag;
@@ -124,7 +117,7 @@ public abstract class Sprite implements Anchor {
   }
 
   public String getFace() {
-    return getContent() instanceof EmojiContent ? ((EmojiContent) getContent()).getCodepoint() : "";
+    return getContent() instanceof Emoji ? ((Emoji) getContent()).getCodepoint() : "";
   }
 
   public abstract Content getContent();
@@ -326,12 +319,9 @@ public abstract class Sprite implements Anchor {
     }
   }
 
-  public void setText(String text) {
-    setContent(screen.createText(text));
-  }
 
   public boolean setContent(Content content) {
-    if (content instanceof EmojiContent && getContent() instanceof EmojiContent && !manualSizeComponents.isEmpty()) {
+    if (content instanceof Emoji && getContent() instanceof Emoji && !manualSizeComponents.isEmpty()) {
       float size = getHeight();
       boolean result = setContentImpl(content);
       setHeight(size);
@@ -354,48 +344,33 @@ public abstract class Sprite implements Anchor {
     adjustSize(SizeComponent.HEIGHT);
   }
 
-  public Sprite getLabel() {
-    if (label == null) {
-      label = screen.createSprite();
-      label.setAnchor(this);
-      label.setTextColor(0xff000000);
-      label.setFillColor(0xffffffff);
-      label.setLineColor(0xff000000);
-      label.setY((getHeight() + this.label.getHeight()) / -2);
-      label.setYAlign(YAlign.TOP);
-    }
-    return label;
-  }
-
-  public boolean setLabel(Sprite label) {
-    if (label == this.label) {
-      return false;
-    }
-    this.label = label;
-    label.setAnchor(this);
-    return true;
-  }
 
   public Sprite getBubble() {
-    if (bubble == null) {
-      bubble = screen.createSprite();
-      bubble.setAnchor(this);
+    if (bubbleSprite == null) {
+      Text bubbleText = screen.createText("");
+      bubbleText.setColor(0xff000000);
+
+      Bubble bubble = screen.createBubble();
       bubble.setPadding(3);
-      bubble.setTextColor(0xff000000);
       bubble.setFillColor(0xffffffff);
       bubble.setLineColor(0xff000000);
-      bubble.setY(10);
-      bubble.setYAlign(YAlign.BOTTOM);
       bubble.setCornerRadius(3);
+      bubble.setContent(bubbleText);
+
+      bubbleSprite = screen.createSprite();
+      bubbleSprite.setAnchor(this);
+      bubbleSprite.setContent(bubble);
+      bubbleSprite.setY(10);
+      bubbleSprite.setYAlign(YAlign.BOTTOM);
     }
-    return bubble;
+    return bubbleSprite;
   }
 
   public boolean setBubble(Sprite bubble) {
-    if (bubble == this.bubble) {
+    if (bubble == this.bubbleSprite) {
       return false;
     }
-    this.bubble = bubble;
+    this.bubbleSprite = bubble;
     bubble.setAnchor(this);
     return true;
   }
@@ -412,60 +387,6 @@ public abstract class Sprite implements Anchor {
     return setContent(screen.createEmoji(face));
   }
 
-
-  public boolean setFillColor(int fillColor) {
-    if (fillColor == this.fillColor) {
-      return false;
-    }
-    this.fillColor = fillColor;
-    requestSync(STYLE_CHANGED);
-    return true;
-  }
-
-  public boolean setLineColor(int lineColor) {
-    if (lineColor == this.lineColor) {
-      return false;
-    }
-    this.lineColor = lineColor;
-    requestSync(STYLE_CHANGED);
-    return true;
-  }
-
-  public boolean setTextColor(int textColor) {
-    if (textColor == this.textColor) {
-      return false;
-    }
-    this.textColor = textColor;
-    requestSync(STYLE_CHANGED);
-    return true;
-  }
-
-  public boolean setLineWidth(float lineWidth) {
-    if (lineWidth == this.lineWidth) {
-      return false;
-    }
-    this.lineWidth = lineWidth;
-    requestSync(STYLE_CHANGED);
-    return true;
-  }
-
-  public boolean setCornerRadius(float cornerRadius) {
-    if (cornerRadius == this.cornerRadius) {
-      return false;
-    }
-    this.cornerRadius = cornerRadius;
-    requestSync(STYLE_CHANGED);
-    return true;
-  }
-
-  public boolean setPadding(float padding) {
-    if (padding == this.padding) {
-      return false;
-    }
-    this.padding = padding;
-    requestSync(STYLE_CHANGED);
-    return true;
-  }
 
   public boolean setAngle(float angle) {
     if (angle == this.angle) {
@@ -487,8 +408,13 @@ public abstract class Sprite implements Anchor {
   }
 
   public void say(String text) {
-    getBubble().setText(text);
-    getBubble().setVisible(!text.isEmpty());
+    Sprite bubbleSprite = getBubble();
+    Bubble bubble = (Bubble) bubbleSprite.getContent();
+    bubble.setContent(screen.createText(text));
+    bubble.setDY(5);
+    bubbleSprite.setVisible(!text.isEmpty());
+
+    bubbleSprite.adjustSize(SizeComponent.NONE);
     // getBubble().requestSync(HIERARCHY_CHANGED);
   }
 
@@ -700,36 +626,13 @@ public abstract class Sprite implements Anchor {
     return setDxy(getDx(), dy);
   }
 
-  public int getLineColor() {
-    return lineColor;
-  }
-
-  public float getLineWidth() {
-    return lineWidth;
-  }
-
-  public int getFillColor() {
-    return fillColor;
-  }
-
-  public float getCornerRadius() {
-    return cornerRadius;
-  }
-
-  public int getTextColor() {
-    return textColor;
-  }
-
-  public float getPadding() {
-    return padding;
-  }
 
   /**
    * Adjusts the size without triggering anything
    */
-  public void setAdjustedSize(float width, float height) {
-    this.width = width;
-    this.height = height;
+  public void setAdjustedSize(float[] size) {
+    this.width = size[0];
+    this.height = size[1];
   }
 
   public Set<SizeComponent> getManualSizeComponents() {

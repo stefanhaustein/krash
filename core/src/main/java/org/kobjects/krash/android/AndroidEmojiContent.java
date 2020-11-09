@@ -5,14 +5,14 @@ import android.graphics.drawable.Drawable;
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
 
-import org.kobjects.krash.api.EmojiContent;
+import org.kobjects.krash.api.Emoji;
 
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AndroidEmojiContent extends AndroidDrawableContent implements EmojiContent {
+public class AndroidEmojiContent extends AndroidDrawableContent implements Emoji {
 
   // TODO: add a static SVG that can be used to mark loading errors.
   static Map<String, SVG> svgCache = new HashMap<>();

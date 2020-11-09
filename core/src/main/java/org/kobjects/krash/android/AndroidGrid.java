@@ -1,14 +1,13 @@
 package org.kobjects.krash.android;
 
 import android.view.View;
-import android.widget.GridLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 
 import org.kobjects.krash.api.Content;
-import org.kobjects.krash.api.GridContent;
+import org.kobjects.krash.api.Tiles;
 
-public class AndroidGrid implements GridContent, AndroidContent {
+public class AndroidGrid implements Tiles, AndroidContent {
 
   private int columnCount;
   private int rowCount;
@@ -31,7 +30,7 @@ public class AndroidGrid implements GridContent, AndroidContent {
   }
 
   @Override
-  public View getView() {
+  public View createView() {
     TableLayout tableLayout = new TableLayout(screen.activity);
 
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
@@ -41,7 +40,7 @@ public class AndroidGrid implements GridContent, AndroidContent {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidContent cell = row[columnIndex];
           if (cell != null) {
-            View view = cell.getView();
+            View view = cell.createView();
             tableRow.addView(view);
             TableRow.LayoutParams layoutParams = (TableRow.LayoutParams) view.getLayoutParams();
             layoutParams.weight = 1;
@@ -64,21 +63,22 @@ public class AndroidGrid implements GridContent, AndroidContent {
     return 10 * rowCount;
   }
 
-  public void adjustSize(AndroidSprite sprite, AndroidSprite.SizeComponent sizeComponent) {
+  @Override
+  public float[] adjustSize(float width, float height, AndroidSprite.SizeComponent sizeComponent) {
     switch (sizeComponent) {
       case NONE:
-        sprite.setAdjustedSize(getIntrinsicWidth(), getIntrinsicHeight());
-        break;
+        return new float[] {getIntrinsicWidth(), getIntrinsicHeight()};
       case WIDTH: {
-        float scale = sprite.getWidth() / getIntrinsicWidth();
-        sprite.setAdjustedSize(sprite.getWidth(), getIntrinsicHeight() * scale);
-        break;
+        float scale = width / getIntrinsicWidth();
+        return new float[] {width, getIntrinsicHeight() * scale};
       }
       case HEIGHT: {
-        float scale = sprite.getHeight() / getIntrinsicHeight();
-        sprite.setAdjustedSize(getIntrinsicWidth() * scale, sprite.getHeight());
-        break;
+        float scale = height / getIntrinsicHeight();
+        return new float[] {getIntrinsicWidth() * scale, height};
+
       }
+      default:
+        throw new IllegalArgumentException();
     }
   }
 

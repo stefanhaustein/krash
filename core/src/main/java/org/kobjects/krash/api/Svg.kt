@@ -1,5 +1,5 @@
 package org.kobjects.krash.api
 
-interface SvgContent : Content {
+interface Svg : Content {
     val svg: String
 }
