@@ -23,7 +23,7 @@ import org.kobjects.krash.api.YAlign;
 import java.util.Objects;
 
 
-public class AndroidSprite extends Sprite implements AndroidAnchor {
+public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
 
   private static Canvas testCanvas;
   private static Bitmap testBitmap;
@@ -33,14 +33,12 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
 
   public AnchorLayout<View> view;
 
-  AndroidSprite(AndroidScreen screen) {
-    super(screen);
+  AndroidSprite(AndroidScreen screen, Content content) {
+    super(screen, content);
     this.screen = screen;
 
     view = new AnchorLayout<>(new AppCompatImageView(screen.activity));
     view.setTag(this);
-
-    setContent(new AndroidEmojiContent(screen, DEFAULT_FACE));
   }
 
   @Override
@@ -245,7 +243,7 @@ public class AndroidSprite extends Sprite implements AndroidAnchor {
 
       if (changeListeners != null) {
         synchronized (changeListeners) {
-          for (Runnable changeListener : changeListeners) {
+          for (Runnable changeListener : (Iterable<Runnable>) changeListeners) {
             changeListener.run();
           }
         }

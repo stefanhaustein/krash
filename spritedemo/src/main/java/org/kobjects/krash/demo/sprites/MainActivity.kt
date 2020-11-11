@@ -27,12 +27,11 @@ class MainActivity : AppCompatActivity() {
                 grid[x, y] = screen.createEmoji(if (x + y and 1 == 0) "⬛" else "⬜")
             }
         }
-        val gridHolder: Sprite = screen.createSprite()
-        gridHolder.content = grid
+        val gridHolder = screen.createSprite(grid);
         gridHolder.setWidth(200f)
         gridHolder.rotation = 1f
-        val ball: Sprite = screen.createSprite()
-        ball.content = screen.createSvg("<svg height='100' width='100'><circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' /></svg>")
+        val ball = screen.createSprite(
+                screen.createSvg("<svg height='100' width='100'><circle cx='50' cy='50' r='40' stroke='black' stroke-width='3' fill='red' /></svg>"))
         //        ball.face = "⚽"
         ball.setWidth(20f)
         ball.speed = 20f
@@ -40,8 +39,7 @@ class MainActivity : AppCompatActivity() {
         ball.edgeMode = EdgeMode.BOUNCE
         ball.rotation = -90f
         ball.say("Bounce")
-        val ghost: Sprite = screen.createSprite()
-        ghost.face = "\uD83D\uDC7B"
+        val ghost  = screen.createSprite(screen.createEmoji("\uD83D\uDC7B"))
         ghost.opacity = 0.8f
         ghost.speed = 10f
         ghost.direction = -50f

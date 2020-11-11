@@ -2,7 +2,7 @@ package org.kobjects.krash.api;
 
 public interface Screen extends Anchor {
 
-  Sprite createSprite();
+  <T extends Content> Sprite<T> createSprite(T content);
 
   Emoji createEmoji(String codepoint);
 

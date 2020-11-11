@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-public abstract class Sprite implements Anchor {
+public abstract class Sprite<T extends Content> implements Anchor {
 
   public enum SizeComponent {
     NONE,
@@ -43,7 +43,6 @@ public abstract class Sprite implements Anchor {
   Sprite bubbleSprite;
   private float width;
   private float height;
-  int textColor = 0xff000000;
   protected EnumSet<SizeComponent> manualSizeComponents = EnumSet.noneOf(SizeComponent.class);
   protected ArrayList<Runnable> changeListeners;
   private float angle;
@@ -59,9 +58,10 @@ public abstract class Sprite implements Anchor {
   protected ArrayList<DragListener> dragListeners;
 
 
-  protected Sprite(Screen screen) {
+  protected Sprite(Screen screen, T content) {
     this.screen = screen;
     this.anchor = screen;
+    setContent(content);
   }
 
   public void addDragListener(DragListener dragListener) {
@@ -120,7 +120,7 @@ public abstract class Sprite implements Anchor {
     return getContent() instanceof Emoji ? ((Emoji) getContent()).getCodepoint() : "";
   }
 
-  public abstract Content getContent();
+  public abstract T getContent();
 
   public float getAngle() {
     return angle;
@@ -320,7 +320,7 @@ public abstract class Sprite implements Anchor {
   }
 
 
-  public boolean setContent(Content content) {
+  public boolean setContent(T content) {
     if (content instanceof Emoji && getContent() instanceof Emoji && !manualSizeComponents.isEmpty()) {
       float size = getHeight();
       boolean result = setContentImpl(content);
@@ -357,9 +357,8 @@ public abstract class Sprite implements Anchor {
       bubble.setCornerRadius(3);
       bubble.setContent(bubbleText);
 
-      bubbleSprite = screen.createSprite();
+      bubbleSprite = screen.createSprite(bubble);
       bubbleSprite.setAnchor(this);
-      bubbleSprite.setContent(bubble);
       bubbleSprite.setY(10);
       bubbleSprite.setYAlign(YAlign.BOTTOM);
     }
@@ -383,8 +382,9 @@ public abstract class Sprite implements Anchor {
     return true;
   }
 
+  @Deprecated
   public boolean setFace(String face) {
-    return setContent(screen.createEmoji(face));
+    return setContent((T) screen.createEmoji(face));
   }
 
 

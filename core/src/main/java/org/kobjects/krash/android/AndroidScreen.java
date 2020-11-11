@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
 import org.kobjects.krash.api.Bubble;
+import org.kobjects.krash.api.Content;
 import org.kobjects.krash.api.Tiles;
 import org.kobjects.krash.api.Screen;
 import org.kobjects.krash.api.Sprite;
@@ -215,9 +216,9 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
     dpad.setVisible(false);
   }
 
-  public AndroidSprite createSprite() {
+  public <T extends Content> AndroidSprite createSprite(T content) {
     synchronized (lock) {
-      AndroidSprite sprite = new AndroidSprite(this);
+      AndroidSprite sprite = new AndroidSprite(this, content);
       allWidgets.add(sprite);
       return sprite;
     }
