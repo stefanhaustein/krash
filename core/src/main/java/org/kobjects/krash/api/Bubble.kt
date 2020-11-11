@@ -1,7 +1,7 @@
 package org.kobjects.krash.api
 
-interface Bubble : Content {
-    var content: Content
+interface Bubble<T> : Content where T : Content {
+    var content: T
     var fillColor : Int
     var lineColor : Int
     var lineWidth : Float
