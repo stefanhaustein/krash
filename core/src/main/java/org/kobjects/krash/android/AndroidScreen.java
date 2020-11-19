@@ -20,7 +20,7 @@ import androidx.lifecycle.OnLifecycleEvent;
 
 import org.kobjects.krash.api.Bubble;
 import org.kobjects.krash.api.Content;
-import org.kobjects.krash.api.Tiles;
+import org.kobjects.krash.api.Grid;
 import org.kobjects.krash.api.Screen;
 import org.kobjects.krash.api.Sprite;
 import org.kobjects.krash.api.Svg;
@@ -326,7 +326,7 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   }
 
   @Override
-  public Tiles createGrid(int width, int height) {
+  public Grid createGrid(int width, int height) {
     return new AndroidGrid(this, width, height);
   }
 

@@ -12,7 +12,7 @@ public interface Screen extends Anchor {
 
   Text createText(String text);
 
-  Tiles createGrid(int width, int height);
+  Grid createGrid(int width, int height);
 
   Svg createSvg(String svg);
 

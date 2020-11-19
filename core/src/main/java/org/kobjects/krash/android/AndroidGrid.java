@@ -1,50 +1,61 @@
 package org.kobjects.krash.android;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 
 import org.kobjects.krash.api.Content;
-import org.kobjects.krash.api.Tiles;
+import org.kobjects.krash.api.Grid;
+import org.kobjects.krash.api.Tile;
 
-public class AndroidGrid implements Tiles, AndroidContent {
+public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
 
   private int columnCount;
   private int rowCount;
-  private AndroidContent[][] grid;
+  private AndroidTile[][] tiles;
   private final AndroidScreen screen;
+  Bitmap backgroundBitmap;
 
   public AndroidGrid(AndroidScreen screen, int columnCount, int rowCount) {
     this.screen = screen;
     this.columnCount = columnCount;
     this.rowCount = rowCount;
-    grid = new AndroidContent[rowCount][];
+    tiles = new AndroidTile[rowCount][];
+    for (int y = 0; y < rowCount; y++) {
+      tiles[y] = new AndroidTile[columnCount];
+      for (int x = 0; x < columnCount; x++) {
+        tiles[y][x] = new AndroidTile<T>(this, x, y);
+      }
+    }
+    backgroundBitmap = Bitmap.createBitmap(columnCount, rowCount, Bitmap.Config.ARGB_8888);
   }
 
   @Override
-  public void set(int x, int y, Content content) {
-    if (grid[y] == null) {
-      grid[y] = new AndroidContent[columnCount];
-    }
-    grid[y][x] = (AndroidContent) content;
+  public Tile<T> tile(int x, int y) {
+    return tiles[y][x];
   }
 
   @Override
   public View createView() {
     TableLayout tableLayout = new TableLayout(screen.activity);
 
+    BitmapDrawable bitmapDrawable = new BitmapDrawable(backgroundBitmap);
+    bitmapDrawable.setAntiAlias(false);
+    bitmapDrawable.setFilterBitmap(false);
+    tableLayout.setBackground(bitmapDrawable);
+
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-      AndroidContent[] row = grid[rowIndex];
+      AndroidTile[] row = tiles[rowIndex];
       TableRow tableRow = new TableRow(screen.activity);
       if (row != null) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-          AndroidContent cell = row[columnIndex];
-          if (cell != null) {
-            View view = cell.createView();
-            tableRow.addView(view);
-            TableRow.LayoutParams layoutParams = (TableRow.LayoutParams) view.getLayoutParams();
-            layoutParams.weight = 1;
-          }
+          AndroidTile tile = row[columnIndex];
+          View view = tile.content == null ? new View(screen.activity) : ((AndroidContent) tile.content).createView();
+          tableRow.addView(view);
+          TableRow.LayoutParams layoutParams = (TableRow.LayoutParams) view.getLayoutParams();
+          layoutParams.weight = 1;
         }
         tableLayout.addView(tableRow);
         TableLayout.LayoutParams layoutParams = (TableLayout.LayoutParams) tableRow.getLayoutParams();
