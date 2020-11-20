@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         val grid = screen.createGrid(8, 8)
         for (y in 0..7) {
             for (x in 0..7) {
-                grid[x, y] = screen.createEmoji(if (x + y and 1 == 0) "⬛" else "⬜")
+                grid.tile(x, y).setContent(screen.createEmoji(if (x + y and 1 == 0) "⬛" else "⬜"))
             }
         }
         val gridHolder = screen.createSprite(grid);
