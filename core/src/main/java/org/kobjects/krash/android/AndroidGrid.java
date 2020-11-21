@@ -37,6 +37,12 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
     return tiles[y][x];
   }
 
+  TableRow.LayoutParams createCellLayoutParams(int columnIndex) {
+    TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(columnIndex);
+    layoutParams.weight = 1;
+    return layoutParams;
+  }
+
   @Override
   public View createView() {
     TableLayout tableLayout = new TableLayout(screen.activity);
@@ -52,11 +58,8 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
       if (row != null) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidTile tile = row[columnIndex];
-          View view = tile.content == null ? new View(screen.activity) : ((AndroidContent) tile.content).createView();
-          tableRow.addView(view, new TableRow.LayoutParams());
-          TableRow.LayoutParams layoutParams = (TableRow.LayoutParams) view.getLayoutParams();
-          layoutParams.weight = 1;
-          layoutParams.column = columnIndex;
+          View view = tile.createContent();
+          tableRow.addView(view, createCellLayoutParams(columnIndex));
         }
         tableLayout.addView(tableRow);
         TableLayout.LayoutParams layoutParams = (TableLayout.LayoutParams) tableRow.getLayoutParams();
@@ -82,19 +85,13 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
       if (row != null) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidTile tile = row[columnIndex];
-
-          View cellView;
           if (screen.needsSync(tile.changedAt)) {
             tableRow.removeViewAt(columnIndex);
-            cellView = ((AndroidContent) tile.content).createView();
-            tableRow.addView(cellView, columnIndex);
-          } else {
-            cellView = tableRow.getChildAt(columnIndex);
-            ((AndroidContent) tile.content).sync(cellView);
+            View cellView = tile.createContent();
+            tableRow.addView(cellView, columnIndex, createCellLayoutParams(columnIndex));
+          } else if (tile.content != null) {
+            ((AndroidContent) tile.content).sync(tableRow.getChildAt(columnIndex));
           }
-          TableRow.LayoutParams layoutParams = (TableRow.LayoutParams) cellView.getLayoutParams();
-          layoutParams.weight = 1;
-          layoutParams.column = columnIndex;
         }
       }
     }

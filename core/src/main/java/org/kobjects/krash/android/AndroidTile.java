@@ -1,5 +1,7 @@
 package org.kobjects.krash.android;
 
+import android.view.View;
+
 import org.kobjects.krash.api.Content;
 import org.kobjects.krash.api.Tile;
 
@@ -33,5 +35,10 @@ public class AndroidTile<T extends Content> implements Tile<T> {
 
   public void setBackgroundColor(int color) {
     grid.backgroundBitmap.setPixel(x, y, color);
+  }
+
+
+  View createContent() {
+    return content == null ? new View(grid.screen.activity) : ((AndroidContent) content).createView();
   }
 }
