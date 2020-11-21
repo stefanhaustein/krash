@@ -1,6 +1,7 @@
 package org.kobjects.krash.api
 
 interface Anchor {
+
     /**
      * Returns the normalized width of the view. For the screen, this value is negative.
      */

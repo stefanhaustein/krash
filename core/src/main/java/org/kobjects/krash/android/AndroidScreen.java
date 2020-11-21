@@ -36,6 +36,7 @@ import java.util.WeakHashMap;
 public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
 
   private final static boolean DEBUG = false;
+  public int stamp;
 
   private ImageView imageView;
   private Bitmap bitmap;
@@ -276,6 +277,7 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   }
 
   private void animate(float dt) {
+    stamp++;
     ArrayList<Sprite> copy = new ArrayList<>(allWidgets.size());
     synchronized (lock) {
       copy.addAll(allWidgets);
@@ -344,4 +346,10 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   public ViewGroup getView() {
     return view;
   }
+
+  boolean needsSync(int changedAt) {
+    return changedAt >= stamp - 1;
+
+  }
+
 }

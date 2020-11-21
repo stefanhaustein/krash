@@ -17,6 +17,7 @@ public class AndroidTile<T extends Content> implements Tile<T> {
   final int x;
   final int y;
   T content;
+  int changedAt;
 
   AndroidTile(AndroidGrid<T> grid, int x, int y) {
     this.grid = grid;
@@ -26,6 +27,7 @@ public class AndroidTile<T extends Content> implements Tile<T> {
 
   @Override
   public void setContent(T content) {
+    changedAt = grid.screen.stamp;
     this.content = content;
   }
 

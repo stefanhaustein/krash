@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
             ghost.setWidth(50f)
+            grid.tile(3,3).setContent(screen.createEmoji("⚽"))
         }.start()
         // ghost.setText("Hello World");
     }

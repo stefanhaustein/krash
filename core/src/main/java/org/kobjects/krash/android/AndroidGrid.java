@@ -15,7 +15,7 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
   private int columnCount;
   private int rowCount;
   private AndroidTile[][] tiles;
-  private final AndroidScreen screen;
+  final AndroidScreen screen;
   Bitmap backgroundBitmap;
 
   public AndroidGrid(AndroidScreen screen, int columnCount, int rowCount) {
@@ -53,14 +53,14 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidTile tile = row[columnIndex];
           View view = tile.content == null ? new View(screen.activity) : ((AndroidContent) tile.content).createView();
-          tableRow.addView(view);
+          tableRow.addView(view, new TableRow.LayoutParams());
           TableRow.LayoutParams layoutParams = (TableRow.LayoutParams) view.getLayoutParams();
           layoutParams.weight = 1;
+          layoutParams.column = columnIndex;
         }
         tableLayout.addView(tableRow);
         TableLayout.LayoutParams layoutParams = (TableLayout.LayoutParams) tableRow.getLayoutParams();
         layoutParams.weight = 1;
-
       }
     }
     return tableLayout;
@@ -72,6 +72,32 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
 
   float getIntrinsicHeight() {
     return 10 * rowCount;
+  }
+
+  public void sync(View gridView) {
+    TableLayout tableLayout = (TableLayout) gridView;
+    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+      AndroidTile[] row = tiles[rowIndex];
+      TableRow tableRow = (TableRow) tableLayout.getChildAt(rowIndex);
+      if (row != null) {
+        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+          AndroidTile tile = row[columnIndex];
+
+          View cellView;
+          if (screen.needsSync(tile.changedAt)) {
+            tableRow.removeViewAt(columnIndex);
+            cellView = ((AndroidContent) tile.content).createView();
+            tableRow.addView(cellView, columnIndex);
+          } else {
+            cellView = tableRow.getChildAt(columnIndex);
+            ((AndroidContent) tile.content).sync(cellView);
+          }
+          TableRow.LayoutParams layoutParams = (TableRow.LayoutParams) cellView.getLayoutParams();
+          layoutParams.weight = 1;
+          layoutParams.column = columnIndex;
+        }
+      }
+    }
   }
 
   @Override
