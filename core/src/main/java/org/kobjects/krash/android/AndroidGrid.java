@@ -3,6 +3,8 @@ package org.kobjects.krash.android;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 
@@ -37,15 +39,17 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
     return tiles[y][x];
   }
 
-  TableRow.LayoutParams createCellLayoutParams(int columnIndex) {
-    TableRow.LayoutParams layoutParams = new TableRow.LayoutParams(columnIndex);
+  LinearLayout.LayoutParams createCellLayoutParams() {
+    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT);
     layoutParams.weight = 1;
     return layoutParams;
   }
 
   @Override
   public View createView() {
-    TableLayout tableLayout = new TableLayout(screen.activity);
+    LinearLayout tableLayout = new LinearLayout(screen.activity);
+    tableLayout.setOrientation(LinearLayout.VERTICAL);
+//    tableLayout.setStretchAllColumns(true);
 
     BitmapDrawable bitmapDrawable = new BitmapDrawable(backgroundBitmap);
     bitmapDrawable.setAntiAlias(false);
@@ -54,16 +58,16 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
 
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
       AndroidTile[] row = tiles[rowIndex];
-      TableRow tableRow = new TableRow(screen.activity);
+      LinearLayout tableRow = new LinearLayout(screen.activity);
       if (row != null) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidTile tile = row[columnIndex];
           View view = tile.createContent();
-          tableRow.addView(view, createCellLayoutParams(columnIndex));
+          tableRow.addView(view, createCellLayoutParams());
         }
-        tableLayout.addView(tableRow);
-        TableLayout.LayoutParams layoutParams = (TableLayout.LayoutParams) tableRow.getLayoutParams();
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0);
         layoutParams.weight = 1;
+        tableLayout.addView(tableRow, layoutParams);
       }
     }
     return tableLayout;
@@ -78,17 +82,17 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
   }
 
   public void sync(View gridView) {
-    TableLayout tableLayout = (TableLayout) gridView;
+    LinearLayout tableLayout = (LinearLayout) gridView;
     for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
       AndroidTile[] row = tiles[rowIndex];
-      TableRow tableRow = (TableRow) tableLayout.getChildAt(rowIndex);
+      LinearLayout tableRow = (LinearLayout) tableLayout.getChildAt(rowIndex);
       if (row != null) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidTile tile = row[columnIndex];
           if (screen.needsSync(tile.changedAt)) {
             tableRow.removeViewAt(columnIndex);
             View cellView = tile.createContent();
-            tableRow.addView(cellView, columnIndex, createCellLayoutParams(columnIndex));
+            tableRow.addView(cellView, columnIndex, createCellLayoutParams());
           } else if (tile.content != null) {
             ((AndroidContent) tile.content).sync(tableRow.getChildAt(columnIndex));
           }
