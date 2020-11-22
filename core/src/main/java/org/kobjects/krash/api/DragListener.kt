@@ -1,6 +1,6 @@
 package org.kobjects.krash.api
 
-interface DragListener {
+fun interface DragListener {
     enum class DragState {
         START, MOVE, END, CANCEL
     }
