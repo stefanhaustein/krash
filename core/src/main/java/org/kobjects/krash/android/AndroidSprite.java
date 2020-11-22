@@ -193,7 +193,7 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
 
   @Override
   protected void addDragListenerImpl() {
-    view.wrapped.setOnTouchListener(new View.OnTouchListener() {
+    view.setOnTouchListener(new View.OnTouchListener() {
       @Override
       public boolean onTouch(View v, MotionEvent event) {
         final float x = (event.getX() - view.getWidth() / 2) / screen.scale;
