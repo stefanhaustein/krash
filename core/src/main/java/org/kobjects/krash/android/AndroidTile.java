@@ -7,12 +7,6 @@ import org.kobjects.krash.api.Tile;
 
 public class AndroidTile<T extends Content> implements Tile<T> {
 
-  enum Orientation {
-    ORIGINAL,
-    ROT_90,
-    ROT_180,
-    ROT_270
-  }
 
 
   final AndroidGrid<T> grid;
@@ -20,6 +14,7 @@ public class AndroidTile<T extends Content> implements Tile<T> {
   final int y;
   T content;
   int changedAt;
+  Orientation orientation = Orientation.ORIGINAL;
 
   AndroidTile(AndroidGrid<T> grid, int x, int y) {
     this.grid = grid;
@@ -33,12 +28,57 @@ public class AndroidTile<T extends Content> implements Tile<T> {
     this.content = content;
   }
 
+
+
+  @Override
+  public T getContent() {
+    return content;
+  }
+
   public void setBackgroundColor(int color) {
     grid.backgroundBitmap.setPixel(x, y, color);
   }
 
+  @Override
+  public int getBackgroundColor() {
+    return grid.backgroundBitmap.getPixel(x, y);
+  }
 
-  View createContent() {
-    return content == null ? new View(grid.screen.activity) : ((AndroidContent) content).createView();
+  @Override
+  public void setOrientation(Orientation orientation) {
+    this.orientation = orientation;
+    this.changedAt = grid.screen.stamp;
+  }
+
+  @Override
+  public Orientation getOrientation() {
+    return orientation;
+  }
+
+
+  View sync(View oldView) {
+    AndroidContent content = (AndroidContent) this.content;
+    if (oldView != null && !grid.screen.needsSync(changedAt)) {
+      if (content != null) {
+        content.sync(oldView);
+      }
+      return oldView;
+    }
+    if (content == null) {
+      return new View(grid.screen.activity);
+    }
+    View view = content.createView();
+    switch (orientation) {
+      case ROT_90:
+        view.setRotation(90f);
+        break;
+      case ROT_180:
+        view.setRotation(180f);
+        break;
+      case ROT_270:
+        view.setRotation(270f);
+        break;
+    }
+    return view;
   }
 }

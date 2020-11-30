@@ -17,4 +17,13 @@ public interface Screen extends Anchor {
   Svg createSvg(String svg);
 
   Bubble createBubble();
+
+  void schedule(Float interval, Runnable task);
+
+  void unSchedule(Runnable task);
+
+  void addKeyDownListener(GamepadKey key, Runnable listener);
+
 }
+
+

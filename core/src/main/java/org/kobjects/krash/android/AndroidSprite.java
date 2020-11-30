@@ -18,7 +18,6 @@ import androidx.appcompat.widget.AppCompatImageView;
 import org.kobjects.krash.api.Content;
 import org.kobjects.krash.api.DragListener;
 import org.kobjects.krash.api.Sprite;
-import org.kobjects.krash.api.YAlign;
 
 import java.util.Objects;
 

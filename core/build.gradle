@@ -38,9 +38,16 @@ artifacts {
     archives sourcesJar
 }
 
+repositories {
+    maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
+    mavenCentral()
+}
+
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
+    implementation 'com.vanniktech:emoji-twitter:0.6.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'com.caverock:androidsvg-aar:1.4'
     testImplementation 'junit:junit:4.12'
@@ -49,8 +56,4 @@ dependencies {
     implementation 'com.vanniktech:emoji:0.6.0'
     implementation "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-}
-repositories {
-    maven { url 'https://dl.bintray.com/kotlin/kotlin-eap' }
-    mavenCentral()
 }

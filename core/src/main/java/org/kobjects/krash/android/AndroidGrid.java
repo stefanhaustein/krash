@@ -62,7 +62,7 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
       if (row != null) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidTile tile = row[columnIndex];
-          View view = tile.createContent();
+          View view = tile.sync(null);
           tableRow.addView(view, createCellLayoutParams());
         }
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0);
@@ -89,12 +89,11 @@ public class AndroidGrid<T extends Content> implements Grid<T>, AndroidContent {
       if (row != null) {
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           AndroidTile tile = row[columnIndex];
-          if (screen.needsSync(tile.changedAt)) {
+          View oldView = tableRow.getChildAt(columnIndex);
+          View newView = tile.sync(oldView);
+          if (oldView != newView) {
             tableRow.removeViewAt(columnIndex);
-            View cellView = tile.createContent();
-            tableRow.addView(cellView, columnIndex, createCellLayoutParams());
-          } else if (tile.content != null) {
-            ((AndroidContent) tile.content).sync(tableRow.getChildAt(columnIndex));
+            tableRow.addView(newView, columnIndex, createCellLayoutParams());
           }
         }
       }

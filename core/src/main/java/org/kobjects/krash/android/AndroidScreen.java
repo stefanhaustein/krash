@@ -8,6 +8,8 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -18,8 +20,12 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
+import com.vanniktech.emoji.EmojiManager;
+import com.vanniktech.emoji.twitter.TwitterEmojiProvider;
+
 import org.kobjects.krash.api.Bubble;
 import org.kobjects.krash.api.Content;
+import org.kobjects.krash.api.GamepadKey;
 import org.kobjects.krash.api.Grid;
 import org.kobjects.krash.api.Screen;
 import org.kobjects.krash.api.Sprite;
@@ -28,6 +34,9 @@ import org.kobjects.krash.api.Text;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -45,6 +54,10 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   private int logicalViewportWidth = 200;
   private boolean physicalPixels;
 
+  private HashMap<Runnable, SchedulerRecord> scheduled = new HashMap<>();
+  private HashMap<Runnable, EnumSet<GamepadKey>> gamepadListeners = new HashMap<>();
+
+
   final Activity activity;
   /**
    * Multiply with scale to get from virtual coordinates to px, divide to get from px to
@@ -57,6 +70,32 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   public float scale = 1;
   public Dpad dpad;
   private ViewGroup view;
+  private View.OnTouchListener internalGamepadListener = new View.OnTouchListener() {
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+      if (event.getAction() != MotionEvent.ACTION_DOWN) {
+        return false;
+      }
+      GamepadKey target;
+      if (v == dpad.up) {
+        target = GamepadKey.UP;
+      } else if (v == dpad.down) {
+        target = GamepadKey.DOWN;
+      } else if (v == dpad.left) {
+        target = GamepadKey.LEFT;
+      } else if (v == dpad.right) {
+        target = GamepadKey.RIGHT;
+      } else {
+        return false;
+      }
+      for (Map.Entry<Runnable, EnumSet<GamepadKey>> entry : gamepadListeners.entrySet()) {
+        if (entry.getValue().contains(target)) {
+          entry.getKey().run();
+        }
+      }
+      return true;
+    }
+  };
 
 
   /**
@@ -66,6 +105,9 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
 
 
   public AndroidScreen(AppCompatActivity activity) {
+
+    EmojiManager.install(new TwitterEmojiProvider());
+
     view = new FrameLayout(activity);
     this.activity = activity;
     view.setClipChildren(false);
@@ -277,12 +319,27 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   }
 
   private void animate(float dt) {
-    stamp++;
+    ArrayList<Runnable> toRun = new ArrayList<>();
+    synchronized (lock) {
+      for (SchedulerRecord schedulerRecord : scheduled.values()) {
+        schedulerRecord.passed += dt/1000f;
+        while (schedulerRecord.passed > schedulerRecord.interval) {
+          toRun.add(schedulerRecord.task);
+          schedulerRecord.passed -= schedulerRecord.interval;
+        }
+      }
+    }
+
+    for (Runnable runnable : toRun) {
+      runnable.run();
+    }
+
     ArrayList<Sprite> copy = new ArrayList<>(allWidgets.size());
     synchronized (lock) {
       copy.addAll(allWidgets);
     }
     activity.runOnUiThread(() -> {
+      stamp++;
       for (Sprite widget : copy) {
         if (widget instanceof AndroidSprite) {
           ((AndroidSprite) widget).sync(dt);
@@ -343,6 +400,42 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   }
 
   @Override
+  public void schedule(Float interval, Runnable task) {
+    scheduled.put(task, new SchedulerRecord(interval, task));
+  }
+
+  @Override
+  public void unSchedule(Runnable task) {
+    synchronized (lock) {
+      for (int i = 0; i < scheduled.size(); i++) {
+        if (scheduled.get(i).task == task) {
+          scheduled.remove(task);
+        }
+      }
+    }
+  }
+
+  @Override
+  public void addKeyDownListener(GamepadKey key, Runnable listener) {
+    if (gamepadListeners.size() == 0) {
+      dpad.setVisible(true);
+      dpad.up.setOnTouchListener(internalGamepadListener);
+      dpad.down.setOnTouchListener(internalGamepadListener);
+      dpad.left.setOnTouchListener(internalGamepadListener);
+      dpad.right.setOnTouchListener(internalGamepadListener);
+      dpad.fire.setOnTouchListener(internalGamepadListener);
+    }
+
+    EnumSet<GamepadKey> old = gamepadListeners.get(listener);
+    if (old == null) {
+      gamepadListeners.put(listener, EnumSet.of(key));
+    } else {
+      old.add(key);
+    }
+  }
+
+
+  @Override
   public ViewGroup getView() {
     return view;
   }
@@ -350,6 +443,17 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   boolean needsSync(int changedAt) {
     return changedAt >= stamp - 1;
 
+  }
+
+
+  static class SchedulerRecord {
+    final Runnable task;
+    final float interval;
+    float passed;
+    SchedulerRecord(float interval, Runnable task) {
+      this.task = task;
+      this.interval = interval;
+    }
   }
 
 }

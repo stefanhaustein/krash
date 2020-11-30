@@ -3,8 +3,6 @@ package org.kobjects.krash.demo.sprites
 import android.graphics.Color
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.vanniktech.emoji.EmojiManager
-import com.vanniktech.emoji.twitter.TwitterEmojiProvider
 import org.kobjects.krash.android.AndroidScreen
 import org.kobjects.krash.api.EdgeMode
 import org.kobjects.krash.api.Sprite
@@ -12,7 +10,6 @@ import org.kobjects.krash.api.Sprite
 class MainActivity : AppCompatActivity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EmojiManager.install(TwitterEmojiProvider())
         val screen = AndroidScreen(this)
         //  screen.setViewport(320, 200, true);
         screen.view.setBackgroundColor(Color.DKGRAY)

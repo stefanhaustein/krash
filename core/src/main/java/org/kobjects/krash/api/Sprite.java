@@ -29,8 +29,6 @@ public abstract class Sprite<T extends Content> implements Anchor {
   protected float x;
   protected float y;
   protected float z;
-  protected XAlign xAlign = XAlign.CENTER;
-  protected YAlign yAlign = YAlign.CENTER;
   protected float opacity = 1;
 
   // For internal use!
@@ -141,45 +139,17 @@ public abstract class Sprite<T extends Content> implements Anchor {
 
   public float getRelativeX() {
     if (anchor == screen) {
-      switch (xAlign) {
-        case LEFT:
-          return x;
-        case RIGHT:
-          return screen.getWidth() - x - getWidth();
-        default:
-          return (screen.getWidth() - getWidth()) / 2 + x;
-      }
+      return (screen.getWidth() - getWidth()) / 2 + x;
     } else {
-      switch (xAlign) {
-        case LEFT:
-          return anchor.getWidth() + x;
-        case RIGHT:
-          return -x - getWidth();
-        default:
-          return (anchor.getWidth() - getWidth()) / 2 + x;
-      }
+      return (anchor.getWidth() - getWidth()) / 2 + x;
     }
   }
 
   public float getRelativeY() {
     if (anchor == screen) {
-      switch (yAlign) {
-        case TOP:
-          return y;
-        case BOTTOM:
-          return screen.getHeight() - getHeight() - y;
-        default:
-          return (screen.getHeight() - getHeight()) / 2 - y;
-      }
+      return (screen.getHeight() - getHeight()) / 2 - y;
     } else {
-      switch (yAlign) {
-        case TOP:
-          return anchor.getHeight() + y;
-        case BOTTOM:
-          return -y - getHeight();
-        default:
-          return (anchor.getHeight() - getHeight()) / 2 - y;
-      }
+      return (anchor.getHeight() - getHeight()) / 2 - y;
     }
   }
 
@@ -280,34 +250,6 @@ public abstract class Sprite<T extends Content> implements Anchor {
     return true;
   }
 
-  public XAlign getXAlign() {
-    return xAlign;
-  }
-
-  public YAlign getYAlign() {
-    return yAlign;
-  }
-
-  public boolean setXAlign(XAlign newValue) {
-    if (xAlign == newValue) {
-      return false;
-    }
-    xAlign = newValue;
-    requestSync(POSITION_CHANGED);
-    return true;
-  }
-
-
-  public boolean setYAlign(YAlign newValue) {
-    if (yAlign == newValue) {
-      return false;
-    }
-    yAlign = newValue;
-    requestSync(POSITION_CHANGED);
-    return true;
-  }
-
-
   public void addChangeListener(Runnable changeListener) {
     synchronized (screen.getLock()) {
       if (changeListeners == null) {
@@ -359,8 +301,7 @@ public abstract class Sprite<T extends Content> implements Anchor {
 
       bubbleSprite = screen.createSprite(bubble);
       bubbleSprite.setAnchor(this);
-      bubbleSprite.setY(10);
-      bubbleSprite.setYAlign(YAlign.BOTTOM);
+      bubbleSprite.setY(10 + bubbleSprite.height);
     }
     return bubbleSprite;
   }
