@@ -122,29 +122,7 @@ public class AndroidSprite<T> extends Sprite {
     this.setAdjustedSize(content.adjustSize(getWidth(), getHeight(), sizeComponent));
     requestSync(SIZE_CHANGED);
   }
-
-
-  @Override
-  protected void addDragListenerImpl() {
-    view.setOnTouchListener(new View.OnTouchListener() {
-      @Override
-      public boolean onTouch(View v, MotionEvent event) {
-        final float x = (event.getX() - view.getWidth() / 2) / screen.scale;
-        final float y = (view.getHeight() / 2 - event.getY()) / screen.scale;
-        switch (event.getAction() & MotionEvent.ACTION_MASK) {
-          case MotionEvent.ACTION_DOWN:
-            return notifyDragged(DragListener.DragState.START, x, y);
-          case MotionEvent.ACTION_UP:
-            return notifyDragged(DragListener.DragState.END, x, y);
-          case MotionEvent.ACTION_MOVE:
-            return notifyDragged(DragListener.DragState.MOVE, x, y);
-          case MotionEvent.ACTION_CANCEL:
-            return notifyDragged(DragListener.DragState.CANCEL, x, y);
-        }
-        return false;
-      }
-    });
-  }
+  
 
   protected void syncNative(Matrix matrix) {
     synchronized (lock) {
@@ -189,6 +167,27 @@ public class AndroidSprite<T> extends Sprite {
           // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
           view.setLayoutParams(new FrameLayout.LayoutParams(pixelWidth, pixelHeight));
           view.requestLayout();
+      }
+
+      if ((changedProperties & (CONTENT_CHANGED | LISTENERS_CHANGED)) != 0 && dragListeners != null && !dragListeners.isEmpty()) {
+        view.setOnTouchListener(new View.OnTouchListener() {
+          @Override
+          public boolean onTouch(View v, MotionEvent event) {
+            final float x = (event.getX() - view.getWidth() / 2) / screen.scale;
+            final float y = (view.getHeight() / 2 - event.getY()) / screen.scale;
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
+              case MotionEvent.ACTION_DOWN:
+                return notifyDragged(DragListener.DragState.START, x, y);
+              case MotionEvent.ACTION_UP:
+                return notifyDragged(DragListener.DragState.END, x, y);
+              case MotionEvent.ACTION_MOVE:
+                return notifyDragged(DragListener.DragState.MOVE, x, y);
+              case MotionEvent.ACTION_CANCEL:
+                return notifyDragged(DragListener.DragState.CANCEL, x, y);
+            }
+            return false;
+          }
+        });
       }
 
 

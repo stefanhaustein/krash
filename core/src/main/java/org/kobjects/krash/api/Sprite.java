@@ -27,6 +27,7 @@ public abstract class Sprite<T extends Content> implements Anchor {
   public static final int CONTENT_CHANGED = 4;
   public static final int HIERARCHY_CHANGED = 8;
   public static final int STYLE_CHANGED = 16;
+  public static final int LISTENERS_CHANGED = 32;
 
   protected float x;
   protected float y;
@@ -74,9 +75,9 @@ public abstract class Sprite<T extends Content> implements Anchor {
     synchronized (lock) {
       if (dragListeners == null) {
         dragListeners = new ArrayList<>();
-        addDragListenerImpl();
       }
       dragListeners.add(dragListener);
+      requestSync(LISTENERS_CHANGED);
     }
   }
 
@@ -95,7 +96,6 @@ public abstract class Sprite<T extends Content> implements Anchor {
     return pivotY;
   }
 
-  protected abstract void addDragListenerImpl();
 
   protected final boolean notifyDragged(DragListener.DragState state, float x, float y) {
     synchronized (lock) {
