@@ -23,6 +23,7 @@ import androidx.lifecycle.OnLifecycleEvent;
 import com.vanniktech.emoji.EmojiManager;
 import com.vanniktech.emoji.twitter.TwitterEmojiProvider;
 
+import org.jetbrains.annotations.NotNull;
 import org.kobjects.krash.api.Bubble;
 import org.kobjects.krash.api.Content;
 import org.kobjects.krash.api.GamepadKey;
@@ -56,6 +57,8 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
 
   private HashMap<Runnable, SchedulerRecord> scheduled = new HashMap<>();
   private HashMap<Runnable, EnumSet<GamepadKey>> gamepadListeners = new HashMap<>();
+
+  private ArrayList<Sprite<?>> children = new ArrayList<>();
 
 
   final Activity activity;
@@ -334,15 +337,17 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
       runnable.run();
     }
 
-    ArrayList<Sprite> copy = new ArrayList<>(allWidgets.size());
+    ArrayList<Sprite> copy = new ArrayList<>(children.size());
     synchronized (lock) {
-      copy.addAll(allWidgets);
+      copy.addAll(children);
     }
     activity.runOnUiThread(() -> {
       stamp++;
+      Matrix transformation = new Matrix();
+      transformation.setScale(scale, scale);
       for (Sprite widget : copy) {
         if (widget instanceof AndroidSprite) {
-          ((AndroidSprite) widget).sync(dt);
+          widget.sync(dt, transformation);
         }
       }
     });
@@ -443,6 +448,16 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   boolean needsSync(int changedAt) {
     return changedAt >= stamp - 1;
 
+  }
+
+  @Override
+  public void addChild(@NotNull Sprite<? extends Content> child) {
+    children.add(child);
+  }
+
+  @Override
+  public void removeChild(@NotNull Sprite<? extends Content> child) {
+    children.remove(child);
   }
 
 

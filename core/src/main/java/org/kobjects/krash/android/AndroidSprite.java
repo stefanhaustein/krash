@@ -2,6 +2,7 @@ package org.kobjects.krash.android;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -15,6 +16,7 @@ import android.widget.FrameLayout;
 
 import androidx.appcompat.widget.AppCompatImageView;
 
+import org.jetbrains.annotations.NotNull;
 import org.kobjects.krash.api.Content;
 import org.kobjects.krash.api.DragListener;
 import org.kobjects.krash.api.Sprite;
@@ -212,10 +214,8 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
     });
   }
 
-  void sync(float dt) {
+  protected void syncNative(Matrix matrix) {
     synchronized (lock) {
-      animate(dt);
-
       int changedProperties = this.changedProperties;
      this.changedProperties = 0;
       view.setVisibility(visible ? View.VISIBLE : View.GONE);
@@ -223,7 +223,7 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
       // visible is used internally to handle bubble visibility and to remove everything on clear, so it
       // gets special treatment here.
       boolean shouldBeAttached = visible && shouldBeAttached();
-      ViewGroup expectedParent = shouldBeAttached ? ((AndroidAnchor) anchor).getView() : null;
+      ViewGroup expectedParent = shouldBeAttached ? screen.getView() : null;
       if (view.getParent() != expectedParent) {
         if (view.getParent() != null) {
           ((ViewGroup) view.getParent()).removeView(view);
@@ -235,10 +235,14 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
       }
       syncUi(changedProperties);
 
-      view.setTranslationX(getRelativeX() * screen.scale);
-      view.setTranslationY(getRelativeY() * screen.scale);
+      float[] values = new float[9];
+      matrix.getValues(values);
+      view.setTranslationX(values[Matrix.MTRANS_X]);
+      view.setTranslationY(values[Matrix.MTRANS_Y]);
 
       view.setTranslationZ(z);
+
+
 
       if (changeListeners != null) {
         synchronized (changeListeners) {
@@ -265,4 +269,5 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
   public ViewGroup getView() {
     return view;
   }
+
 }

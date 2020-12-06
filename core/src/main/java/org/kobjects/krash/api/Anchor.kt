@@ -12,4 +12,7 @@ interface Anchor {
      */
     val height: Float
     val tag: Any?
+
+    fun addChild(child: Sprite<out Content>)
+    fun removeChild(child: Sprite<out Content>)
 }

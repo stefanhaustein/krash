@@ -1,5 +1,7 @@
 package org.kobjects.krash.api;
 
+import android.graphics.Matrix;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +33,11 @@ public abstract class Sprite<T extends Content> implements Anchor {
   protected float z;
   protected float opacity = 1;
 
+  private float anchorX;
+  private float anchorY;
+  private float pivotX = 0.5f;
+  private float pivotY = 0.5f;
+
   // For internal use!
   protected boolean visible = true;
 
@@ -54,11 +61,12 @@ public abstract class Sprite<T extends Content> implements Anchor {
   Object tag;
 
   protected ArrayList<DragListener> dragListeners;
+  private ArrayList<Sprite<?>> children = new ArrayList<>();
 
 
   protected Sprite(Screen screen, T content) {
     this.screen = screen;
-    this.anchor = screen;
+    setAnchor(screen);
     setContent(content);
   }
 
@@ -70,6 +78,21 @@ public abstract class Sprite<T extends Content> implements Anchor {
       }
       dragListeners.add(dragListener);
     }
+  }
+
+  public void setPivotX(float pivotX) {
+    this.pivotX = pivotX;
+  }
+  public void setPivotY(float pivotY) {
+    this.pivotY = pivotY;
+  }
+
+  public float getPivotX() {
+    return pivotX;
+  }
+
+  public float getPivotY() {
+    return pivotY;
   }
 
   protected abstract void addDragListenerImpl();
@@ -101,6 +124,8 @@ public abstract class Sprite<T extends Content> implements Anchor {
 
   abstract protected void requestSync(int newChangedProperties);
 
+
+  abstract protected void syncNative(Matrix matrix);
 
   public static float clockwiseDegToDx(float deg) {
     return (float) Math.cos(Math.toRadians(90 - deg));
@@ -218,13 +243,21 @@ public abstract class Sprite<T extends Content> implements Anchor {
     return true;
   }
 
-  public boolean setAnchor(Anchor anchor) {
-    if (this.anchor == anchor) {
-      return false;
+  public void setAnchor(Anchor anchor) {
+    anchor(anchor,0.5f, 0.5f);
+  }
+
+  public void anchor(Anchor anchor, float anchorX, float anchorY) {
+    this.anchorX = anchorX;
+    this.anchorY = anchorY;
+    if (this.anchor != anchor) {
+      if (this.anchor != null) {
+        this.anchor.removeChild(this);
+      }
+      this.anchor = anchor;
+      anchor.addChild(this);
+      requestSync(HIERARCHY_CHANGED);
     }
-    this.anchor = anchor;
-    requestSync(HIERARCHY_CHANGED);
-    return true;
   }
 
   public boolean setZ(float z) {
@@ -300,20 +333,12 @@ public abstract class Sprite<T extends Content> implements Anchor {
       bubble.setContent(bubbleText);
 
       bubbleSprite = screen.createSprite(bubble);
-      bubbleSprite.setAnchor(this);
+      bubbleSprite.anchor(this, 0.5f, 0);
       bubbleSprite.setY(10 + bubbleSprite.height);
     }
     return bubbleSprite;
   }
 
-  public boolean setBubble(Sprite bubble) {
-    if (bubble == this.bubbleSprite) {
-      return false;
-    }
-    this.bubbleSprite = bubble;
-    bubble.setAnchor(this);
-    return true;
-  }
 
   public boolean setEdgeMode(EdgeMode newValue) {
     if (edgeMode == newValue) {
@@ -359,8 +384,10 @@ public abstract class Sprite<T extends Content> implements Anchor {
     // getBubble().requestSync(HIERARCHY_CHANGED);
   }
 
-  public void animate(float dt) {
+  public void sync(float dt, Matrix parentTransformation) {
     int propertiesChanged = 0;
+
+    Matrix transformation = new Matrix(parentTransformation);
 
     if (speed != 0.0) {
       propertiesChanged = POSITION_CHANGED;
@@ -427,6 +454,19 @@ public abstract class Sprite<T extends Content> implements Anchor {
     } else {
       view.wrapped.setBackgroundColor(0);
     } */
+
+    float tx = x + anchor.getWidth() * anchorX - width * pivotX;
+    float ty = (anchor.getHeight()  * anchorY - height * pivotY) - y;
+
+
+    transformation.preTranslate(tx, ty);
+
+    syncNative(transformation);
+
+    for (Sprite<?> child : children) {
+      child.sync(dt, transformation);
+    }
+
   }
 
   boolean checkCollision(Sprite other) {
@@ -580,4 +620,14 @@ public abstract class Sprite<T extends Content> implements Anchor {
     return manualSizeComponents;
   }
 
+
+  @Override
+  public void addChild(Sprite<? extends Content> child) {
+  children.add(child);
+  }
+
+  @Override
+  public void removeChild(Sprite<? extends Content> child) {
+children.remove(child);
+  }
 }

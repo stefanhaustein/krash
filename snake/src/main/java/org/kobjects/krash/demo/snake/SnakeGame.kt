@@ -33,6 +33,13 @@ class SnakeGame(val screen: Screen) {
     init {
         gridSprite.setWidth(200F)
 
+        scoreSprite.anchor(screen, 1f, 0f);
+        scoreSprite.setPivotX(1f);
+        scoreSprite.setPivotY(0f);
+        highScoreSprite.anchor(screen, 0f, 0f);
+        highScoreSprite.setPivotX(0f);
+        highScoreSprite.setPivotY(0f);
+
         reset()
 
         screen.addKeyDownListener(GamepadKey.UP, { snakeDirection = GamepadKey.UP})
@@ -67,9 +74,8 @@ class SnakeGame(val screen: Screen) {
         val scoreText = screen.createText(score.toString())
         scoreText.size = 16F
         scoreText.color = Color.WHITE
+
         scoreSprite.setContent(scoreText)
-        scoreSprite.x = (screen.width - scoreSprite.width) / 2
-        scoreSprite.y = (screen.height - scoreSprite.height) / 2
     }
 
     fun placeApple() {
@@ -92,8 +98,6 @@ class SnakeGame(val screen: Screen) {
         grid.tile(snakeX, snakeY).setContent(SKULL)
         if (score > highScore) {
             highScoreSprite.setContent(scoreSprite.content);
-            highScoreSprite.setY(scoreSprite.y)
-            highScoreSprite.setX(-scoreSprite.x)
         }
 
     }
