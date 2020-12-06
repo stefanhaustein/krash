@@ -11,12 +11,8 @@ import android.graphics.drawable.ScaleDrawable;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.appcompat.widget.AppCompatImageView;
-
-import org.jetbrains.annotations.NotNull;
 import org.kobjects.krash.api.Content;
 import org.kobjects.krash.api.DragListener;
 import org.kobjects.krash.api.Sprite;
@@ -24,7 +20,7 @@ import org.kobjects.krash.api.Sprite;
 import java.util.Objects;
 
 
-public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
+public class AndroidSprite<T> extends Sprite {
 
   private static Canvas testCanvas;
   private static Bitmap testBitmap;
@@ -32,28 +28,13 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
   private AndroidContent content;
   private AndroidScreen screen;
 
-  public AnchorLayout<View> view;
+  public View view;
 
   AndroidSprite(AndroidScreen screen, Content content) {
     super(screen, content);
     this.screen = screen;
-
-    view = new AnchorLayout<>(new AppCompatImageView(screen.activity));
-    view.setTag(this);
   }
 
-  @Override
-  protected boolean shouldBeAttached() {
-    // Top level sprites without children will get checked for physical removal
-    if (view.getChildCount() == 1 && getAnchor() instanceof AndroidScreen) {
-      // width / height swap is intended here: ranges go up to the double of the opposite dimension
-      float size = Math.max(getWidth(), getHeight());
-      return opacity > MIN_OPACITY
-          && x - size / 2 < screen.getLogicalViewportHeight() && x + size / 2 > -screen.getLogicalViewportHeight()
-          && y - size / 2 < screen.getLogicalViewportWidth() && y + size / 2 > -screen.getLogicalViewportWidth();
-    }
-    return super.shouldBeAttached();
-  }
 
   @Override
   public Content getContent() {
@@ -135,55 +116,6 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
     }
   }
 
-  void syncUi(int changedProperties) {
-    synchronized (lock) {
-
-      if ((changedProperties & CONTENT_CHANGED) != 0) {
-      /*  if (content instanceof AndroidDrawableContent) {
-          ImageView imageView = new ImageView(screen.activity);
-          Drawable drawable = ((AndroidDrawableContent) content).getDrawable();
-          imageView.setLayerType(drawable instanceof SvgDrawable ? View.LAYER_TYPE_SOFTWARE : View.LAYER_TYPE_HARDWARE, null);
-
-          fillDistanceArray(drawable);
-          imageView.setImageDrawable(drawable);
-
-          imageView.setAdjustViewBounds(true);
-          imageView.setScaleType(ImageView.ScaleType.FIT_XY);
-
-          view.setWrapped(imageView);
-        } else if (content instanceof AndroidViewContent) { */
-          view.setWrapped(content.createView());
-      //    adjustSize(SizeComponent.SIZE);
-/*        } else {
-          throw new IllegalStateException();
-        }*/
-
-        content.sync(view.wrapped);
-
-        if (content instanceof AndroidDrawableContent) {
-          fillDistanceArray(((AndroidDrawableContent) content).getDrawable());
-        } else {
-          fillDistanceArrayForRect();
-        }
-      } else {
-        content.sync(view.wrapped);
-      }
-
-      if ((changedProperties & SIZE_CHANGED) != 0) {
-        int pixelWidth = Math.round(screen.scale * getWidth());
-        int pixelHeight = Math.round(screen.scale * getHeight());
-
-        // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
-        view.wrapped.setLayoutParams(new FrameLayout.LayoutParams(pixelWidth, pixelHeight));
-        view.wrapped.requestLayout();
-        view.requestLayout();
-
-
-      }
-      view.wrapped.setRotation(getAngle());
-    }
-  }
-
   @Override
   protected void adjustSize(SizeComponent sizeComponent) {
     manualSizeComponents.add(sizeComponent);
@@ -217,32 +149,56 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
   protected void syncNative(Matrix matrix) {
     synchronized (lock) {
       int changedProperties = this.changedProperties;
-     this.changedProperties = 0;
+      this.changedProperties = 0;
+
+      if (view == null || (changedProperties & CONTENT_CHANGED) != 0) {
+        if (view != null) {
+          screen.getView().removeView(view);
+        }
+        view = content.createView();
+
+        if (content instanceof AndroidDrawableContent) {
+          fillDistanceArray(((AndroidDrawableContent) content).getDrawable());
+        } else {
+          fillDistanceArrayForRect();
+        }
+      }
+      content.sync(view);
+
       view.setVisibility(visible ? View.VISIBLE : View.GONE);
-      view.wrapped.setAlpha(opacity);
+      view.setAlpha(opacity);
       // visible is used internally to handle bubble visibility and to remove everything on clear, so it
       // gets special treatment here.
-      boolean shouldBeAttached = visible && shouldBeAttached();
-      ViewGroup expectedParent = shouldBeAttached ? screen.getView() : null;
-      if (view.getParent() != expectedParent) {
-        if (view.getParent() != null) {
-          ((ViewGroup) view.getParent()).removeView(view);
+
+
+      boolean shouldBeAttached = this.visible;
+      boolean attached = view.getParent() != null;
+      if (shouldBeAttached != attached) {
+        if (shouldBeAttached) {
+          screen.getView().addView(view);
+        } else {
+          screen.getView().removeView(view);
         }
-        if (expectedParent == null) {
-          return;
-        }
-        expectedParent.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
       }
-      syncUi(changedProperties);
+
+
+      if ((changedProperties & (CONTENT_CHANGED | SIZE_CHANGED)) != 0) {
+          int pixelWidth = Math.round(screen.scale * getWidth());
+          int pixelHeight = Math.round(screen.scale * getHeight());
+
+          // view.wrapped.setBackgroundColor((int) (Math.random() * 0xffffff) | 0xff000000);
+          view.setLayoutParams(new FrameLayout.LayoutParams(pixelWidth, pixelHeight));
+          view.requestLayout();
+      }
+
 
       float[] values = new float[9];
       matrix.getValues(values);
+
       view.setTranslationX(values[Matrix.MTRANS_X]);
       view.setTranslationY(values[Matrix.MTRANS_Y]);
-
       view.setTranslationZ(z);
-
-
+      view.setRotation(getAngle());
 
       if (changeListeners != null) {
         synchronized (changeListeners) {
@@ -253,7 +209,6 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
       }
       this.changedProperties = 0;
     }
-
   }
 
 
@@ -265,8 +220,7 @@ public class AndroidSprite<T> extends Sprite implements AndroidAnchor {
   }
 
 
-  @Override
-  public ViewGroup getView() {
+  public View getView() {
     return view;
   }
 

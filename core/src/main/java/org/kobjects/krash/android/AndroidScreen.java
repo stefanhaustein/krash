@@ -43,7 +43,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.WeakHashMap;
 
-public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
+public class AndroidScreen implements LifecycleObserver, Screen {
 
   private final static boolean DEBUG = false;
   public int stamp;
@@ -440,7 +440,6 @@ public class AndroidScreen implements LifecycleObserver, Screen, AndroidAnchor {
   }
 
 
-  @Override
   public ViewGroup getView() {
     return view;
   }
