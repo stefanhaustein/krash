@@ -385,69 +385,71 @@ public abstract class Sprite<T extends Content> implements Anchor {
   }
 
   public void sync(float dt, Matrix parentTransformation) {
-    int propertiesChanged = 0;
+    synchronized (lock) {
 
-    Matrix transformation = new Matrix(parentTransformation);
+      int propertiesChanged = 0;
 
-    if (speed != 0.0) {
-      propertiesChanged = POSITION_CHANGED;
-      double theta = Math.toRadians(90 - direction);
-      double delta = dt * speed / 1000;
-      double dx = Math.cos(theta) * delta;
-      double dy = Math.sin(theta) * delta;
-      x += dx;
-      y += dy;
+      Matrix transformation = new Matrix(parentTransformation);
 
-       if (edgeMode != EdgeMode.NONE && anchor == screen) {
-        float radius = (getWidth()+getHeight()) / 2 / 2;
-        switch (edgeMode) {
-          case WRAP:
-            if (dx > 0 && x - radius > screen.getWidth() / 2) {
-              x = -screen.getWidth() / 2 - radius;
-            } else if (dx < 0 && x + radius < screen.getWidth() / -2) {
-              x = screen.getWidth() / 2 + radius;
-            }
-            if (dy > 0 && y - radius > screen.getHeight() / 2) {
-              y = -screen.getHeight() / 2 - radius;
-            } else if (dy < 0 && y + radius < screen.getHeight() / -2) {
-              y = screen.getHeight() / 2 + radius;
-            }
-            break;
-          case BOUNCE:
-            if (dx > 0 && x + radius > screen.getWidth() / 2) {
-              direction += dy < 0 ? 90 : -90;
-            } else if (dx < 0 && x - radius < screen.getWidth() / -2) {
-              direction += dy > 0 ? 90 : -90;
-            }
-            if (dy > 0 && y + radius > screen.getHeight() / 2) {
-              direction += dx > 0 ? 90 : -90;
-            } else if (dy < 0 && y - radius < screen.getHeight() / -2) {
-              direction += dx < 0 ? 90 : -90;
-            }
-            break;
+      if (speed != 0.0) {
+        propertiesChanged = POSITION_CHANGED;
+        double theta = Math.toRadians(90 - direction);
+        double delta = dt * speed / 1000;
+        double dx = Math.cos(theta) * delta;
+        double dy = Math.sin(theta) * delta;
+        x += dx;
+        y += dy;
+
+        if (edgeMode != EdgeMode.NONE && anchor == screen) {
+          float radius = (getWidth() + getHeight()) / 2 / 2;
+          switch (edgeMode) {
+            case WRAP:
+              if (dx > 0 && x - radius > screen.getWidth() / 2) {
+                x = -screen.getWidth() / 2 - radius;
+              } else if (dx < 0 && x + radius < screen.getWidth() / -2) {
+                x = screen.getWidth() / 2 + radius;
+              }
+              if (dy > 0 && y - radius > screen.getHeight() / 2) {
+                y = -screen.getHeight() / 2 - radius;
+              } else if (dy < 0 && y + radius < screen.getHeight() / -2) {
+                y = screen.getHeight() / 2 + radius;
+              }
+              break;
+            case BOUNCE:
+              if (dx > 0 && x + radius > screen.getWidth() / 2) {
+                direction += dy < 0 ? 90 : -90;
+              } else if (dx < 0 && x - radius < screen.getWidth() / -2) {
+                direction += dy > 0 ? 90 : -90;
+              }
+              if (dy > 0 && y + radius > screen.getHeight() / 2) {
+                direction += dx > 0 ? 90 : -90;
+              } else if (dy < 0 && y - radius < screen.getHeight() / -2) {
+                direction += dx < 0 ? 90 : -90;
+              }
+              break;
+          }
         }
       }
-    }
-    if (rotation != 0F) {
-      propertiesChanged = POSITION_CHANGED;
-      angle += rotation * dt / 1000F;
-    }
-    if (grow != 0F) {
-      propertiesChanged = SIZE_CHANGED;
-      setWidth(getWidth() + grow * dt / 1000F);
-    }
-    if (fade != 0F) {
-      propertiesChanged = STYLE_CHANGED;
-      opacity += fade * dt / 1000F;
-    }
+      if (rotation != 0F) {
+        propertiesChanged = POSITION_CHANGED;
+        angle += rotation * dt / 1000F;
+      }
+      if (grow != 0F) {
+        propertiesChanged = SIZE_CHANGED;
+        setWidth(getWidth() + grow * dt / 1000F);
+      }
+      if (fade != 0F) {
+        propertiesChanged = STYLE_CHANGED;
+        opacity += fade * dt / 1000F;
+      }
 
-    if (propertiesChanged != 0) {
-      requestSync(propertiesChanged);
-    }
+      if (propertiesChanged != 0) {
+        requestSync(propertiesChanged);
+      }
 
-    if (tag instanceof Animated) {
-      ((Animated) tag).animate(dt, propertiesChanged != 0);
-    }
+      if (tag instanceof Animated) {
+        ((Animated) tag).animate(dt, propertiesChanged != 0);
+      }
 /*
     if (collisions().size() > 0) {
       view.wrapped.setBackgroundColor(0xffff0000);
@@ -455,18 +457,18 @@ public abstract class Sprite<T extends Content> implements Anchor {
       view.wrapped.setBackgroundColor(0);
     } */
 
-    float tx = x + anchor.getWidth() * anchorX - width * pivotX;
-    float ty = (anchor.getHeight()  * anchorY - height * pivotY) - y;
+      float tx = x + anchor.getWidth() * anchorX - width * pivotX;
+      float ty = (anchor.getHeight() * anchorY - height * pivotY) - y;
 
 
-    transformation.preTranslate(tx, ty);
+      transformation.preTranslate(tx, ty);
 
-    syncNative(transformation);
+      syncNative(transformation);
 
-    for (Sprite<?> child : children) {
-      child.sync(dt, transformation);
+      for (Sprite<?> child : children) {
+        child.sync(dt, transformation);
+      }
     }
-
   }
 
   boolean checkCollision(Sprite other) {
