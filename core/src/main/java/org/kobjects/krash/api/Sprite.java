@@ -625,11 +625,15 @@ public abstract class Sprite<T extends Content> implements Anchor {
 
   @Override
   public void addChild(Sprite<? extends Content> child) {
-  children.add(child);
+    synchronized (lock) {
+      children.add(child);
+    }
   }
 
   @Override
   public void removeChild(Sprite<? extends Content> child) {
-children.remove(child);
+    synchronized (lock) {
+      children.remove(child);
+    }
   }
 }
