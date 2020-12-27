@@ -406,17 +406,15 @@ public class AndroidScreen implements LifecycleObserver, Screen {
 
   @Override
   public void schedule(Float interval, Runnable task) {
-    scheduled.put(task, new SchedulerRecord(interval, task));
+    synchronized (lock) {
+      scheduled.put(task, new SchedulerRecord(interval, task));
+    }
   }
 
   @Override
   public void unSchedule(Runnable task) {
     synchronized (lock) {
-      for (int i = 0; i < scheduled.size(); i++) {
-        if (scheduled.get(i).task == task) {
-          scheduled.remove(task);
-        }
-      }
+      scheduled.remove(task);
     }
   }
 
