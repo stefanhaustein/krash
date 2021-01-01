@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.webkit.WebHistoryItem
 import org.kobjects.krash.api.GamepadKey
 import org.kobjects.krash.api.Screen
+import org.kobjects.krash.api.Sprite
 
 class SnakeGame(val screen: Screen) {
 
@@ -33,12 +34,12 @@ class SnakeGame(val screen: Screen) {
     init {
         gridSprite.setWidth(320f)
 
-        scoreSprite.anchor(screen, 1f, 0f);
-        scoreSprite.setPivotX(1f);
-        scoreSprite.setPivotY(0f);
-        highScoreSprite.anchor(screen, 0f, 0f);
-        highScoreSprite.setPivotX(0f);
-        highScoreSprite.setPivotY(0f);
+        scoreSprite.anchor(screen, Sprite.RIGHT, Sprite.TOP);
+        scoreSprite.setPivotX(Sprite.RIGHT);
+        scoreSprite.setPivotY(Sprite.TOP);
+        highScoreSprite.anchor(screen, Sprite.LEFT, Sprite.TOP);
+        highScoreSprite.setPivotX(Sprite.LEFT);
+        highScoreSprite.setPivotY(Sprite.TOP);
 
         reset()
 

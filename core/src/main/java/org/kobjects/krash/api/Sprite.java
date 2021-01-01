@@ -16,6 +16,11 @@ public abstract class Sprite<T extends Content> implements Anchor {
     HEIGHT,
   }
 
+  public static final float TOP = 0;
+  public static final float BOTTOM = 100;
+  public static final float LEFT = 0;
+  public static final float RIGHT = 100;
+  public static final float CENTER = 50;
 
   protected final Object lock = new Object();
 
@@ -34,10 +39,10 @@ public abstract class Sprite<T extends Content> implements Anchor {
   protected float z;
   protected float opacity = 1;
 
-  private float anchorX;
-  private float anchorY;
-  private float pivotX = 0.5f;
-  private float pivotY = 0.5f;
+  private float anchorX = CENTER;
+  private float anchorY = CENTER;
+  private float pivotX = CENTER;
+  private float pivotY = CENTER;
 
   // For internal use!
   protected boolean visible = true;
@@ -81,11 +86,11 @@ public abstract class Sprite<T extends Content> implements Anchor {
     }
   }
 
-  public void setPivotX(float pivotX) {
-    this.pivotX = pivotX;
+  public void setPivotX(float percent) {
+    this.pivotX = percent;
   }
-  public void setPivotY(float pivotY) {
-    this.pivotY = pivotY;
+  public void setPivotY(float percent) {
+    this.pivotY = percent;
   }
 
   public float getPivotX() {
@@ -244,7 +249,7 @@ public abstract class Sprite<T extends Content> implements Anchor {
   }
 
   public void setAnchor(Anchor anchor) {
-    anchor(anchor,0.5f, 0.5f);
+    anchor(anchor, anchorX, anchorY);
   }
 
   public void anchor(Anchor anchor, float anchorX, float anchorY) {
@@ -330,8 +335,10 @@ public abstract class Sprite<T extends Content> implements Anchor {
       bubble.setContent(bubbleText);
 
       bubbleSprite = screen.createSprite(bubble);
-      bubbleSprite.anchor(this, 0.5f, 0);
-      bubbleSprite.setY(-10 - bubbleSprite.height);
+      bubbleSprite.setPivotX(CENTER);
+      bubbleSprite.setPivotY(BOTTOM);
+      bubbleSprite.anchor(this, CENTER, TOP);
+      bubbleSprite.setY(-10);
     }
     return bubbleSprite;
   }
@@ -447,16 +454,9 @@ public abstract class Sprite<T extends Content> implements Anchor {
       if (tag instanceof Animated) {
         ((Animated) tag).animate(dt, propertiesChanged != 0);
       }
-/*
-    if (collisions().size() > 0) {
-      view.wrapped.setBackgroundColor(0xffff0000);
-    } else {
-      view.wrapped.setBackgroundColor(0);
-    } */
 
-      float tx = x + anchor.getWidth() * anchorX - width * pivotX;
-      float ty = y + anchor.getHeight() * anchorY - height * pivotY;
-
+      float tx = x + (anchor.getWidth() * anchorX - width * pivotX) * 0.01f;
+      float ty = y + (anchor.getHeight() * anchorY - height * pivotY) * 0.01f;
 
       transformation.preTranslate(tx, ty);
 
