@@ -260,14 +260,11 @@ public abstract class Sprite<T extends Content> implements Anchor {
     }
   }
 
-  public boolean setZ(float z) {
-    if (z == this.z) {
-      return false;
+  public void setZ(float z) {
+    if (z != this.z) {
+      this.z = z;
+      requestSync(POSITION_CHANGED);
     }
-    this.z = z;
-    requestSync(POSITION_CHANGED);
-
-    return true;
   }
 
   public boolean getVisible() {
@@ -334,7 +331,7 @@ public abstract class Sprite<T extends Content> implements Anchor {
 
       bubbleSprite = screen.createSprite(bubble);
       bubbleSprite.anchor(this, 0.5f, 0);
-      bubbleSprite.setY(10 + bubbleSprite.height);
+      bubbleSprite.setY(-10 - bubbleSprite.height);
     }
     return bubbleSprite;
   }
@@ -458,7 +455,7 @@ public abstract class Sprite<T extends Content> implements Anchor {
     } */
 
       float tx = x + anchor.getWidth() * anchorX - width * pivotX;
-      float ty = (anchor.getHeight() * anchorY - height * pivotY) - y;
+      float ty = y + anchor.getHeight() * anchorY - height * pivotY;
 
 
       transformation.preTranslate(tx, ty);

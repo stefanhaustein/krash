@@ -7,7 +7,10 @@ import com.caverock.androidsvg.SVGParseException;
 
 import org.kobjects.krash.api.Emoji;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,12 +39,8 @@ public class AndroidEmojiContent extends AndroidDrawableContent implements Emoji
 
 
   AndroidEmojiContent(AndroidScreen screen, String codepoint) {
-    super(screen);    this.codepoint = codepoint;
-    synchronized (svgCache) {
-      if (svgCache.get(codepoint) == null) {
-        requestSvg(codepoint);
-      }
-    }
+    super(screen);
+    this.codepoint = codepoint;
   }
 
 
@@ -49,41 +48,20 @@ public class AndroidEmojiContent extends AndroidDrawableContent implements Emoji
   public Drawable getDrawable() {
     synchronized (svgCache) {
       SVG svg = svgCache.get(codepoint);
-      if (svg != null && svg != ERROR_SVG) {
-        return new SvgDrawable(svg);
+      if (svg == null) {
+        String imageName = "twmoji/" + Long.toHexString(Character.codePointAt(codepoint, 0)) + ".svg";
+        try {
+          svg = SVG.getFromAsset(screen.activity.getAssets(), imageName);
+        } catch (Exception e) {
+          e.printStackTrace();
+          return new SvgDrawable(ERROR_SVG);
+        }
+        svgCache.put(codepoint, svg);
       }
-      Drawable drawable = Emojis.getDrawable(screen.getView().getContext(), codepoint);
-      return drawable != null ? drawable : Emojis.getDrawable(screen.getView().getContext(), "\uD83D\uDEAB");
+      return new SvgDrawable(svg);
     }
   }
 
-  void requestSvg(String name) {
-    int codePoint = Character.codePointAt(name, 0);
-
-    new Thread(() -> {
-      try {
-        URL url = new URL("https://twemoji.maxcdn.com/v/latest/svg/" + Integer.toHexString(codePoint) + ".svg");
-        InputStream is = url.openConnection().getInputStream();
-        SVG svg = SVG.getFromInputStream(is);
-        is.close();
-
-        synchronized (svgCache) {
-          svgCache.put(name, svg);
-        }
-        // TODO
-        // imageDirty = true;
-        // requestSync(true);
-      } catch (Exception e) {
-        e.printStackTrace();
-        synchronized (svgCache) {
-          svgCache.put(name, ERROR_SVG);
-        }
-      }
-
-    }).start();
-
-
-  }
 
   @Override
   public String getCodepoint() {

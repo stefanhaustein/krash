@@ -1,6 +1,7 @@
 package org.kobjects.krash.android;
 
 import android.app.Activity;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -61,6 +62,8 @@ public class AndroidScreen implements LifecycleObserver, Screen {
   private ArrayList<Sprite<?>> children = new ArrayList<>();
 
 
+
+
   final Activity activity;
   /**
    * Multiply with scale to get from virtual coordinates to px, divide to get from px to
@@ -70,7 +73,7 @@ public class AndroidScreen implements LifecycleObserver, Screen {
   float bitmapScale;
   final Object lock = new Object();
 
-  public float scale = 1;
+  public final float scale = Resources.getSystem().getDisplayMetrics().density;
   public Dpad dpad;
   private ViewGroup view;
   private View.OnTouchListener internalGamepadListener = new View.OnTouchListener() {
@@ -120,9 +123,7 @@ public class AndroidScreen implements LifecycleObserver, Screen {
 
     view.addOnLayoutChangeListener((viw, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
         if (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom) {
-          float scaleX = ((float) right - left) / logicalViewportWidth;
-          float scaleY = ((float) bottom - top) / logicalViewportHeight;
-          scale = Math.min(scaleX, scaleY);
+
           dpad.requestSync();
           synchronized (lock) {
             for (AndroidSprite widget : allWidgets) {

@@ -31,7 +31,7 @@ class SnakeGame(val screen: Screen) {
     var highScore = 0
 
     init {
-        gridSprite.setWidth(200F)
+        gridSprite.setWidth(320f)
 
         scoreSprite.anchor(screen, 1f, 0f);
         scoreSprite.setPivotX(1f);
