@@ -173,8 +173,8 @@ public class AndroidSprite<T> extends Sprite {
         view.setOnTouchListener(new View.OnTouchListener() {
           @Override
           public boolean onTouch(View v, MotionEvent event) {
-            final float x = (event.getX() - view.getWidth() / 2) / screen.scale;
-            final float y = (view.getHeight() / 2 - event.getY()) / screen.scale;
+            final float x = event.getX() / screen.scale;
+            final float y = event.getY() / screen.scale;
             switch (event.getAction() & MotionEvent.ACTION_MASK) {
               case MotionEvent.ACTION_DOWN:
                 return notifyDragged(DragListener.DragState.START, x, y);
